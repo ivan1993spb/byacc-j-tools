@@ -32,6 +32,9 @@ foreach ($input as $filen) {
 		$lex = strtoupper($lex);
 
 		foreach ($statements as $statement) {
+			if (empty($statement)) {
+				$statement = "''";
+			}
 			printf("%s -> %s\n", $lex, $statement);
 		}
 		echo "\n";

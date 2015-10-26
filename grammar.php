@@ -17,8 +17,12 @@ foreach ($input as $filen) {
 		exit(1);
 	}
 
-	$lexspattern = '/(?<=\s|^)(?:'.join('|', array_keys($grammar['lexs'])).')(?=\s|$)/i';
-	$tokenpattern = '/(?<=\s|^)(?:'.join('|', $grammar['tokens']).')(?=\s|$)/i';
+	$lexspattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
+		array_keys($grammar['lexs'])
+	)).')(?=\s|$)/i';
+	$tokenpattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
+		$grammar['tokens']
+	)).')(?=\s|$)/i';
 
 	foreach ($grammar['lexs'] as $lex => $statements) {
 		$statements = preg_replace_callback($tokenpattern, function ($matches) {
@@ -71,7 +75,7 @@ function parseGrammar($grammar) {
 	$parts[1] = preg_replace("{/\*(?:.|\s)*?\*/}", "", $parts[1]);
 
 	$lexs = array();
-	if (preg_match_all('/([a-z_]+)\s*:\s*((?:.|\s)*?)\s*;/i', $parts[1], $matches, PREG_SET_ORDER) !== FALSE) {
+	if (preg_match_all('/([a-z_.]+)\s*:\s*((?:.|\s)*?)\s*;/i', $parts[1], $matches, PREG_SET_ORDER) !== FALSE) {
 		foreach ($matches as $m) {
 			$lexs[$m[1]] = preg_split("/\s*\|\s*/", $m[2]);
 		}

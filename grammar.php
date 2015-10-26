@@ -21,12 +21,12 @@ foreach ($input as $filen) {
 	$tokenpattern = '/'.join('|', $grammar['tokens']).'/i';
 
 	foreach ($grammar['lexs'] as $lex => $statements) {
-		$statements = preg_replace_callback($lexspattern, function ($matches) {
-			return strtoupper($matches[0]);
-		}, $statements);
-
 		$statements = preg_replace_callback($tokenpattern, function ($matches) {
 			return strtolower($matches[0]);
+		}, $statements);
+
+		$statements = preg_replace_callback($lexspattern, function ($matches) {
+			return strtoupper($matches[0]);
 		}, $statements);
 
 		$lex = strtoupper($lex);

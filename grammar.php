@@ -17,8 +17,8 @@ foreach ($input as $filen) {
 		exit(1);
 	}
 
-	$lexspattern = '/(?:^|\s+)'.join('(?:^|\s+)|', array_keys($grammar['lexs'])).'(?:^|\s+)/i';
-	$tokenpattern = '/(?:^|\s+)'.join('(?:^|\s+)|', $grammar['tokens']).'(?:^|\s+)/i';
+	$lexspattern = '/(?:^|$|\s+)'.join('(?:^|$|\s+)|', array_keys($grammar['lexs'])).'(?:^|$|\s+)/i';
+	$tokenpattern = '/(?:^|$|\s+)'.join('(?:^|$|\s+)|', $grammar['tokens']).'(?:^|$|\s+)/i';
 
 	foreach ($grammar['lexs'] as $lex => $statements) {
 		$statements = preg_replace_callback($tokenpattern, function ($matches) {

@@ -69,7 +69,7 @@ function parseGrammar($grammar) {
 	$parts[1] = preg_replace("{/\*(?:.|\s)*?\*/}", "", $parts[1]);
 
 	$lexs = array();
-	if (preg_match_all('/([a-z_]+)\s*:\s*((?:.|\s)*?)?\s*;/i', $parts[1], $matches, PREG_SET_ORDER) !== FALSE) {
+	if (preg_match_all('/([a-z_]+)\s*:\s*((?:.|\s)*?)\s*;/i', $parts[1], $matches, PREG_SET_ORDER) !== FALSE) {
 		foreach ($matches as $m) {
 			$lexs[$m[1]] = preg_split("/\s*\|\s*/", $m[2]);
 		}

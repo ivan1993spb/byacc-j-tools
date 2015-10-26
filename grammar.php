@@ -37,6 +37,7 @@ foreach ($input as $filen) {
 			}
 			printf("%s -> %s\n", $lex, $statement);
 		}
+
 		echo "\n";
 	}
 }
@@ -65,6 +66,7 @@ function parseGrammar($grammar) {
 
 	// remove src code
 	$parts[1] = preg_replace("/{(?:.|\s)*?}/", "", $parts[1]);
+
 	// remove comments
 	$parts[1] = preg_replace("{/\*(?:.|\s)*?\*/}", "", $parts[1]);
 

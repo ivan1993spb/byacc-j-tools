@@ -48,6 +48,12 @@ function parseGrammar($grammar) {
 		return FALSE;
 	}
 
+	// get start point
+	$start = null;
+	if (preg_match("/%start ([a-z_]+)/i", $parts[0], $matches) === 1) {
+		$start = $matches[1];
+	}
+
 	// get tokens
 	$tokens = array();
 	if (preg_match_all("/^%token\s+([a-z_ ]+)/im", $parts[0], $matches) > 0) {
@@ -72,6 +78,7 @@ function parseGrammar($grammar) {
 	}
 
 	return array(
+		'start'  => $start,
 		'tokens' => $tokens,
 		'lexs'   => $lexs
 	);

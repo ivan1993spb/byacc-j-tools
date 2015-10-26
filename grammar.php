@@ -17,10 +17,12 @@ foreach ($input as $filen) {
 		exit(1);
 	}
 
-	$lexspattern = '/'.join('|', array_keys($grammar['lexs'])).'/i';
-	$tokenpattern = '/'.join('|', $grammar['tokens']).'/i';
+	$lexspattern = '/(?:^|\s+)'.join('(?:^|\s+)|', array_keys($grammar['lexs'])).'(?:^|\s+)/i';
+	$tokenpattern = '/(?:^|\s+)'.join('(?:^|\s+)|', $grammar['tokens']).'(?:^|\s+)/i';
 
 	foreach ($grammar['lexs'] as $lex => $statements) {
+		// var_dump($statements);
+		// continue;
 		$statements = preg_replace_callback($tokenpattern, function ($matches) {
 			return strtolower($matches[0]);
 		}, $statements);

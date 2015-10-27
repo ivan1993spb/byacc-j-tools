@@ -31,7 +31,7 @@ echo "\n";
 
 echo "%{\n";
 if (!empty($settings['package'])){
-	echo "  import ".$settings['package'].";\n";
+	echo "  import ".$settings['package'].".*;\n";
 }
 echo "%}\n";
 echo "\n";
@@ -74,8 +74,10 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		if (!empty($statement)) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
-				if (in_array($s, $nonterminals) || in_array($s, $settings['tokens'])) {
+				if (in_array($s, $nonterminals)) {
 					array_push($args, '('.labelToClassName($s).')$'.($i+1));
+				} elseif (in_array($s, $settings['tokens'])) {
+					array_push($args, '$'.($i+1));
 				}
 			}
 		}
@@ -90,8 +92,6 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	echo "\t;\n";
 	echo "\n";
 }
-
-echo "\n";
 
 echo "%%\n";
 

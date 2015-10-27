@@ -12,7 +12,7 @@ generation java classes from yacc
 ---------------------------------
 
 ```bash
-$ php genJava.php --package=com.test.pack.age --directory=test --parent=edu.eltech.moevm.ParserVar --tokens=IDENTIFIER,CONSTANT,STRING_LITERAL < grammar.y
+$ php genJavaClasses.php --package=com.test.pack.age --directory=test --parent=edu.eltech.moevm.ParserVar --tokens=IDENTIFIER,CONSTANT,STRING_LITERAL < grammar.y
 ```
 
 generation java code for yacc 

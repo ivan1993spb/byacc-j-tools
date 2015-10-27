@@ -133,22 +133,22 @@ foreach ($input as $filein) {
 	}
 
 	// Generate token files
-	foreach (array_intersect($grammar['tokens'], $settings['tokens']) as $token) {
-		$tokenClassName = labelToClassName($token);
-		createClassFile(
-			$settings['directory'].DIRECTORY_SEPARATOR.$tokenClassName.'.java',
-			sprintf($classTokenPattern, $settings['package'], $tokenClassName)
-		);
-	}
+	// foreach (array_intersect($grammar['tokens'], $settings['tokens']) as $token) {
+	// 	$tokenClassName = labelToClassName($token);
+	// 	createClassFile(
+	// 		$settings['directory'].DIRECTORY_SEPARATOR.$tokenClassName.'.java',
+	// 		sprintf($classTokenPattern, $settings['package'], $tokenClassName)
+	// 	);
+	// }
 
 	// Generate nonterminal files
 
 	$nonterminals = array_keys($grammar['nonterminals']);
 
 	foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
-		
+
 		// For each nonterminal create class
-		
+
 		$className = labelToClassName($nonterminal);
 
 		$constructors = array();
@@ -161,10 +161,26 @@ foreach ($input as $filein) {
 			if (!empty($statement)) {
 				$ss = preg_split("/\s+/", $statement);
 				foreach ($ss as $s) {
-					if (in_array($s, $nonterminals) || in_array($s, $settings['tokens'])) {
+					if (in_array($s, $nonterminals)) {
 						$argClass = labelToClassName($s);
 						$argVar = lcfirst($argClass);
 						array_push($args, $argClass.' '.$argVar);
+					} elseif (in_array($s, $settings['tokens'])) {
+						$argVar = lcfirst($settings['parent_class_name']);
+						array_push($args, $settings['parent'].' '.$argVar);
+					}
+				}
+			}
+
+			// checking for equal arguments
+			foreach (array_count_values($args) as $value => $count) {
+				if ($count > 1) {
+					$j = 1;
+					for ($i = 0; $i < count($args); $i++) {
+						if ($args[$i] === $value) {
+							$args[$i] .= $j;
+							$j++;
+						}
 					}
 				}
 			}

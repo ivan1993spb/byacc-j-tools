@@ -1,24 +1,17 @@
 <?php
 
-define("FLAG_PACKAGE", "--package=");
+require_once dirname(__FILE__).'/parseArgs.php';
 
-$package = "genjava";
-if ($argc > 1) {
-	foreach ($argv as $key => $value) {
-		if (substr($value, 0,  strlen(FLAG_PACKAGE)) === FLAG_PACKAGE) {
-			$value = str_replace(FLAG_PACKAGE, "", $value);
-			$package = empty($value) ? $package : $value;
-			$argc -= 1;
-			unset($argv[$key]);
-			break;
-		}
-	}
-}
+$settings = parseArgs(array(
+	'package'   => '',       // target package
+	'directory' => getcwd(), // target directory
+	'parent'    => '',       // parent class for Token and Nonterminal classes
+	'tokens'    => ''        // generate java classes for passed tokens
+), $argc, $argv);
 
-$directory = getcwd().DIRECTORY_SEPARATOR.join(DIRECTORY_SEPARATOR, explode('.', $package));
-if (is_dir($directory)) {
+if (is_dir($settings['directory'])) {
 	if (!($files = @scandir($directory)) || count($files) > 2) {
-		echo "directory $directory is not empty\n";
+		echo "target directory is not empty\n";
 		exit(1);
 	}
 } elseif (!mkdir($directory, 0777, true)) {
@@ -41,7 +34,6 @@ package %s;
 class %s extends ParserVal {
 %s
 }
-
 
 EOT;
 
@@ -73,7 +65,7 @@ foreach ($input as $filen) {
 
 			// For each statement create constructor
 			$args = array();
-			
+
 			if (!empty($statement)) {
 				$ss = preg_split("/\s+/", $statement);
 				foreach ($ss as $s) {

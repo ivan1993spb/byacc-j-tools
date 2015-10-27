@@ -22,6 +22,7 @@ foreach ($input as $filen) {
 	$nonterminalspattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
 		array_keys($grammar['nonterminals'])
 	)).')(?=\s|$)/i';
+
 	$tokenpattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
 		$grammar['tokens']
 	)).')(?=\s|$)/i';

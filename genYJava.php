@@ -75,7 +75,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
 				if (in_array($s, $nonterminals) || in_array($s, $settings['tokens'])) {
-					array_push($args, '$'.($i+1));
+					array_push($args, '('.labelToClassName($s).')$'.($i+1));
 				}
 			}
 		}

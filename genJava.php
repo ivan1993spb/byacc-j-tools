@@ -22,13 +22,6 @@ if (empty($settings['directory'])) {
 	exit(1);
 }
 
-$packpath = str_replace('.', DIRECTORY_SEPARATOR, $settings['package']);
-if (substr($settings['directory'], -strlen($packpath)) !== $packpath) {
-	fwrite(STDERR, "invalid package or directory:\n");
-	fprintf(STDERR, "target directory %s must ends with %s\n", $settings['directory'], $packpath);
-	exit(1);
-}
-
 if (empty($settings['parent'])) {
 	fwrite(STDERR, "please specify parent class package and name:\n");
 	fwrite(STDERR, "use --parent=org.some.pack.age.ParentClass\n");
@@ -40,8 +33,8 @@ if (!is_dir($settings['directory']) && !mkdir($settings['directory'], 0777, true
 	exit(1);
 }
 
-$parentClassName = getClassName($settings['parent']);
-$tokensToGenerate = explode(',', strtolower($settings['tokens']));
+$settings['parent_class_name'] = getClassName($settings['parent']);
+$settings['tokens'] = explode(',', $settings['tokens']);
 
 // Create patterns
 
@@ -61,10 +54,12 @@ package %s;
 
 import %s;
 
-public class Token extends %s {
+public abstract class Token extends %s {
+
 	public Token(%s %s) {
 		// ...
 	}
+
 }
 
 EOT;
@@ -101,15 +96,15 @@ EOT;
 // Create parent class for nonterminal classes
 createClassFile(
 	$settings['directory'].DIRECTORY_SEPARATOR.'Nonterminal.java',
-	sprintf($nonterminalFilePattern, $settings['package'], $settings['parent'], $parentClassName)
+	sprintf($nonterminalFilePattern, $settings['package'], $settings['parent'], $settings['parent_class_name'])
 );
 
 if (!empty($settings['tokens'])) {
 	// Create parent class for token classes
 	createClassFile(
 		$settings['directory'].DIRECTORY_SEPARATOR.'Token.java',
-		sprintf($tokenFilePattern, $settings['package'], $settings['parent'], $parentClassName,
-			$parentClassName, lcfirst($parentClassName))
+		sprintf($tokenFilePattern, $settings['package'], $settings['parent'], $settings['parent_class_name'],
+			$settings['parent_class_name'], lcfirst($settings['parent_class_name']))
 	);
 }
 
@@ -126,71 +121,70 @@ if ($argc > 1) {
 
 foreach ($input as $filein) {
 	$data = file_get_contents($filein);
-
-	$grammar = parseYacc($data);
-	if ($grammar === FALSE) {
-		fwrite(STDERR, "invalid input");
+	if ($data === FALSE) {
+		fwrite(STDERR, "cannot read input\n");
 		exit(1);
 	}
 
-	$grammar['tokens'] = array_map('strtolower', $grammar['tokens']);
+	$grammar = parseYacc($data);
+	if ($grammar === FALSE) {
+		fwrite(STDERR, "invalid input\n");
+		exit(1);
+	}
 
 	// Generate token files
-	foreach (array_intersect($grammar['tokens'], $tokensToGenerate) => $token) {
-		$tokenClassName = nonterminalToClassName($token);
+	foreach (array_intersect($grammar['tokens'], $settings['tokens']) as $token) {
+		$tokenClassName = labelToClassName($token);
 		createClassFile(
 			$settings['directory'].DIRECTORY_SEPARATOR.$tokenClassName.'.java',
 			sprintf($classTokenPattern, $settings['package'], $tokenClassName)
 		);
 	}
 
+	// Generate nonterminal files
+
 	$nonterminals = array_keys($grammar['nonterminals']);
 
 	foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
+		
 		// For each nonterminal create class
-		$className = nonterminalToClassName($nonterminal);
-		$constructors = array();
+		
+		$className = labelToClassName($nonterminal);
 
+		$constructors = array();
 		foreach ($statements as $statement) {
 
 			// For each statement create constructor
+
 			$args = array();
 
 			if (!empty($statement)) {
 				$ss = preg_split("/\s+/", $statement);
 				foreach ($ss as $s) {
-					if (in_array($s, $nonterminals)) {
-						array_push($args, nonterminalToClassName($s).' '.nonterminalToVarName($s));
+					if (in_array($s, $nonterminals) || in_array($s, $settings['tokens'])) {
+						$argClass = labelToClassName($s);
+						$argVar = lcfirst($argClass);
+						array_push($args, $argClass.' '.$argVar);
 					}
 				}
 			}
 
-			array_push($constructors, sprintf($constructorpattern, $className, join(', ', $args)));
+			array_push($constructors, sprintf($constructorPattern, $className, join(', ', $args)));
 		}
 
 		$constructors = array_unique($constructors);
-		$src = sprintf($classpattern, $package, $className, join("\n", $constructors));
 
-		$fileName = $directory.DIRECTORY_SEPARATOR.$className.'.java';
-		if (file_put_contents($fileName, $src) === FALSE) {
-			echo "cannot write class $className\n";
-			exit(1);
-		} else {
-			echo $fileName."\n";
-		}
+		createClassFile(
+			$settings['directory'].DIRECTORY_SEPARATOR.$className.'.java',
+			sprintf($classNonterminalPattern, $settings['package'], $className, join('', $constructors))
+		);
 	}
 }
 
-function nonterminalToClassName($nonterminal) {
+function labelToClassName($label) {
 	return preg_replace_callback('/(?:^|_)([a-z0-9])/', function ($matches) {
 		return strtoupper($matches[1]);
-	}, trim(strtolower($nonterminal)));
-}
-
-function nonterminalToVarName($nonterminal) {
-	return preg_replace_callback('/_([a-z0-9])/', function ($matches) {
-		return strtoupper($matches[1]);
-	}, trim(strtolower($nonterminal)));
+	}, trim(strtolower($label)));
 }
 
 function getClassName($packageAndClass) {

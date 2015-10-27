@@ -10,8 +10,12 @@ if ($argc > 1) {
 	$input = array('php://stdin');
 }
 
-foreach ($input as $filen) {
-	$data = file_get_contents($filen);
+foreach ($input as $filein) {
+	$data = file_get_contents($filein);
+	if ($data === FALSE) {
+		fwrite(STDERR, "cannot read input\n");
+		exit(1);
+	}
 
 	$grammar = parseYacc($data);
 	if ($grammar === FALSE) {

@@ -1,5 +1,7 @@
 <?php
 
+require_once dirname(__FILE__).'/parseYacc.php';
+
 $input = null;
 
 if ($argc > 1) {
@@ -8,31 +10,29 @@ if ($argc > 1) {
 	$input = array('php://stdin');
 }
 
-require_once dirname(__FILE__).'/parseYacc.php';
-
 foreach ($input as $filen) {
 	$data = file_get_contents($filen);
 
 	$grammar = parseYacc($data);
 	if ($grammar === FALSE) {
-		echo "invalid input";
+		fwrite(STDERR, "invalid input\n");
 		exit(1);
 	}
 
-	$nonterminalspattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
+	$nonterminalsPattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
 		array_keys($grammar['nonterminals'])
 	)).')(?=\s|$)/i';
 
-	$tokenpattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
+	$tokenPattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
 		$grammar['tokens']
 	)).')(?=\s|$)/i';
 
 	foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
-		$statements = preg_replace_callback($tokenpattern, function ($matches) {
+		$statements = preg_replace_callback($tokenPattern, function ($matches) {
 			return strtolower($matches[0]);
 		}, $statements);
 
-		$statements = preg_replace_callback($nonterminalspattern, function ($matches) {
+		$statements = preg_replace_callback($nonterminalsPattern, function ($matches) {
 			return strtoupper($matches[0]);
 		}, $statements);
 

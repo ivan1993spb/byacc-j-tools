@@ -29,7 +29,8 @@ if ($grammar === FALSE) {
 // Save first and third parts of yacc file and rewrite second part
 $yaccFileParts = explode("\n%%\n", $data, 3);
 if (sizeof($yaccFileParts) !== 3) {
-	return FALSE;
+	fwrite(STDERR, "invalid input\n");
+	exit(1);
 }
 
 echo $yaccFileParts[0];

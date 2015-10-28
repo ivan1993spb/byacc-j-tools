@@ -77,7 +77,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		echo ' ';
 
 		// printf("{ $$ = new %s(%s); }", $className, join(', ', $args));
-		printf("{ System.out.println(%s); }", $className);
+		printf('{ System.out.println("%s"); }', $className);
 
 		echo "\n";
 	}

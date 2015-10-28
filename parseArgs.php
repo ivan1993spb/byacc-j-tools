@@ -12,5 +12,7 @@ function parseArgs($settings, &$argc, &$argv) {
 		}
 	}
 
+	$argv = array_values($argv);
+
 	return $settings;
 }

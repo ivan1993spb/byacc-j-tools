@@ -3,7 +3,6 @@
 require_once dirname(__FILE__).'/parseArgs.php';
 
 $settings = parseArgs(array(
-	'package'   => '',       // target package
 	'tokens'    => ''        // generate java classes for passed tokens
 ), $argc, $argv);
 
@@ -27,27 +26,19 @@ if ($grammar === FALSE) {
 	exit(1);
 }
 
-echo "\n";
-
-echo "%{\n";
-if (!empty($settings['package'])){
-	echo "  import ".$settings['package'].".*;\n";
+// Save first and third parts of yacc file and rewrite second part
+$yaccFileParts = explode("\n%%\n", $data, 3);
+if (sizeof($yaccFileParts) !== 3) {
+	return FALSE;
 }
-echo "%}\n";
-echo "\n";
 
-foreach (explode("\n", wordwrap(join(' ', $grammar['tokens']))) as $tokens) {
-	echo "%token ".$tokens."\n";
-}
-echo "\n";
+echo $yaccFileParts[0];
 
-echo "%start ".$grammar['start']."\n";
 echo "\n";
 
 echo "%%\n";
 
 echo "\n";
-
 
 $nonterminals = array_keys($grammar['nonterminals']);
 
@@ -95,11 +86,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
 echo "%%\n";
 
-echo "\n";
-
-echo "// nothing...\n";
-
-echo "\n";
+echo $yaccFileParts[2];
 
 function labelToClassName($label) {
 	return preg_replace_callback('/(?:^|_)([a-z0-9])/', function ($matches) {

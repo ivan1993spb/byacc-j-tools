@@ -112,90 +112,84 @@ if (!empty($settings['tokens'])) {
 
 require_once dirname(__FILE__).'/parseYacc.php';
 
-$input = null;
-if ($argc > 1) {
-	$input = array_slice($argv, 1);
-} else {
-	$input = array('php://stdin');
+$input = $argc > 1 ? $argv[1] : 'php://stdin';
+
+$data = file_get_contents($input);
+if ($data === FALSE) {
+	fwrite(STDERR, "cannot read input\n");
+	exit(1);
 }
 
-foreach ($input as $filein) {
-	$data = file_get_contents($filein);
-	if ($data === FALSE) {
-		fwrite(STDERR, "cannot read input\n");
-		exit(1);
-	}
+$grammar = parseYacc($data);
+if ($grammar === FALSE) {
+	fwrite(STDERR, "invalid input\n");
+	exit(1);
+}
 
-	$grammar = parseYacc($data);
-	if ($grammar === FALSE) {
-		fwrite(STDERR, "invalid input\n");
-		exit(1);
-	}
+// Generate token files
+// foreach (array_intersect($grammar['tokens'], $settings['tokens']) as $token) {
+// 	$tokenClassName = labelToClassName($token);
+// 	createClassFile(
+// 		$settings['directory'].DIRECTORY_SEPARATOR.$tokenClassName.'.java',
+// 		sprintf($classTokenPattern, $settings['package'], $tokenClassName)
+// 	);
+// }
 
-	// Generate token files
-	// foreach (array_intersect($grammar['tokens'], $settings['tokens']) as $token) {
-	// 	$tokenClassName = labelToClassName($token);
-	// 	createClassFile(
-	// 		$settings['directory'].DIRECTORY_SEPARATOR.$tokenClassName.'.java',
-	// 		sprintf($classTokenPattern, $settings['package'], $tokenClassName)
-	// 	);
-	// }
+// Generate nonterminal files
 
-	// Generate nonterminal files
+$nonterminals = array_keys($grammar['nonterminals']);
 
-	$nonterminals = array_keys($grammar['nonterminals']);
+foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
-	foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
+	// For each nonterminal create class
 
-		// For each nonterminal create class
+	$className = labelToClassName($nonterminal);
 
-		$className = labelToClassName($nonterminal);
+	$constructors = array();
+	foreach ($statements as $statement) {
 
-		$constructors = array();
-		foreach ($statements as $statement) {
+		// For each statement create constructor
 
-			// For each statement create constructor
+		$args = array();
 
-			$args = array();
-
-			if (!empty($statement)) {
-				$ss = preg_split("/\s+/", $statement);
-				foreach ($ss as $s) {
-					if (in_array($s, $nonterminals)) {
-						$argClass = labelToClassName($s);
-						$argVar = lcfirst($argClass);
-						array_push($args, $argClass.' '.$argVar);
-					} elseif (in_array($s, $settings['tokens'])) {
-						$argVar = lcfirst($settings['parent_class_name']);
-						array_push($args, $settings['parent'].' '.$argVar);
-					}
+		if (!empty($statement)) {
+			$ss = preg_split("/\s+/", $statement);
+			foreach ($ss as $s) {
+				if (in_array($s, $nonterminals)) {
+					$argClass = labelToClassName($s);
+					$argVar = lcfirst($argClass);
+					array_push($args, $argClass.' '.$argVar);
+				} elseif (in_array($s, $settings['tokens'])) {
+					$argVar = lcfirst($settings['parent_class_name']);
+					array_push($args, $settings['parent'].' '.$argVar);
 				}
 			}
-
-			// checking for equal arguments
-			foreach (array_count_values($args) as $value => $count) {
-				if ($count > 1) {
-					$j = 1;
-					for ($i = 0; $i < count($args); $i++) {
-						if ($args[$i] === $value) {
-							$args[$i] .= $j;
-							$j++;
-						}
-					}
-				}
-			}
-
-			array_push($constructors, sprintf($constructorPattern, $className, join(', ', $args)));
 		}
 
-		$constructors = array_unique($constructors);
+		// checking for equal arguments
+		foreach (array_count_values($args) as $value => $count) {
+			if ($count > 1) {
+				$j = 1;
+				for ($i = 0; $i < count($args); $i++) {
+					if ($args[$i] === $value) {
+						$args[$i] .= $j;
+						$j++;
+					}
+				}
+			}
+		}
 
-		createClassFile(
-			$settings['directory'].DIRECTORY_SEPARATOR.$className.'.java',
-			sprintf($classNonterminalPattern, $settings['package'], $className, join('', $constructors))
-		);
+		array_push($constructors, sprintf($constructorPattern, $className, join(', ', $args)));
 	}
+
+	$constructors = array_unique($constructors);
+
+	createClassFile(
+		$settings['directory'].DIRECTORY_SEPARATOR.$className.'.java',
+		sprintf($classNonterminalPattern, $settings['package'], $className, join('', $constructors))
+	);
 }
+
 
 function labelToClassName($label) {
 	return preg_replace_callback('/(?:^|_)([a-z0-9])/', function ($matches) {

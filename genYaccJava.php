@@ -66,15 +66,21 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		if (!empty($statement)) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
-				if (in_array($s, $nonterminals) || !in_array($s, $settings['ignore_tokens'])) {
+				if (in_array($s, $nonterminals)) {
 					array_push($args, '$'.($i+1).'.obj');
+				} elseif (!in_array($s, $settings['ignore_tokens'])) {
+					array_push($args, 'new Leaf($'.($i+1).')');
 				}
 			}
 		}
 
 		echo ' ';
 
-		printf('{ $$ = new ParserVal(new Node("%s", %s)); }', $nonterminal, join(', ', $args));
+		if ($grammar['start'] == $nonterminal) {
+			printf('{ $$ = new ParserVal(new SyntaxTree(new Node("%s", %s))); }', $nonterminal, join(', ', $args));
+		} else {
+			printf('{ $$ = new ParserVal(new Node("%s", %s)); }', $nonterminal, join(', ', $args));
+		}
 
 		echo "\n";
 	}

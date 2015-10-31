@@ -3,10 +3,10 @@
 require_once dirname(__FILE__).'/parseArgs.php';
 
 $settings = parseArgs(array(
-	'tokens'    => ''        // generate java classes for passed tokens
+	'ignore_tokens'    => ''        // generate java classes for passed tokens
 ), $argc, $argv);
 
-$settings['tokens'] = explode(',', $settings['tokens']);
+$settings['ignore_tokens'] = explode(',', $settings['ignore_tokens']);
 
 // Start parsing
 
@@ -66,17 +66,15 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		if (!empty($statement)) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
-				if (in_array($s, $nonterminals)) {
-					array_push($args, '('.labelToClassName($s).')$'.($i+1));
-				} elseif (in_array($s, $settings['tokens'])) {
-					array_push($args, '$'.($i+1));
+				if (in_array($s, $nonterminals) || !in_array($s, $settings['ignore_tokens'])) {
+					array_push($args, '$'.($i+1).'.obj');
 				}
 			}
 		}
 
 		echo ' ';
 
-		printf("{ $$ = new %s(%s); }", $className, join(', ', $args));
+		printf('{ $$ = new ParserVal(new Node("%s", %s)); }', $nonterminal, join(', ', $args));
 
 		echo "\n";
 	}

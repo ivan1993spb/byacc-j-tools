@@ -67,9 +67,9 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
 				if (in_array($s, $nonterminals)) {
-					array_push($args, '$'.($i+1));
+					array_push($args, '(PTElement)$'.($i+1).'.obj');
 				} elseif (!in_array($s, $settings['ignore_tokens'])) {
-					array_push($args, 'new ParserVal(new Leaf(Parser.'.$s.'))');
+					array_push($args, 'new PTLeaf(Parser.'.$s.')');
 				}
 			}
 		}
@@ -77,12 +77,12 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		echo ' ';
 
 		if ($grammar['start'] == $nonterminal) {
-			printf('{ $$ = new ParserVal(new SyntaxTree(new Node(NONTERM.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
-		} elseif (sizeof($args) > 1) {
-			printf('{ $$ = new ParserVal(new Node(NONTERM.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
-		} else {
+			printf('{ $$ = new ParserVal(new SyntaxTree(new Node(Nonterminal.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
+		} else /*if (sizeof($args) > 1) */{
+			printf('{ $$ = new ParserVal(new Node(Nonterminal.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
+		} /*else {
 			echo '{ $$ = $1; }';
-		}
+		}*/
 
 		echo "\n";
 	}

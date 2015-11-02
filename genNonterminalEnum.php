@@ -34,7 +34,7 @@ printf("package %s;", $settings['package']);
 
 echo "\n\n";
 
-echo "public enum Operation {\n";
+echo "public enum Nonterminal {\n";
 
 $nonterminals = array_map(function($s){
 	return '    '.strtoupper($s);

@@ -67,9 +67,9 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
 				if (in_array($s, $nonterminals)) {
-					array_push($args, '$'.($i+1).'.obj');
+					array_push($args, '$'.($i+1));
 				} elseif (!in_array($s, $settings['ignore_tokens'])) {
-					array_push($args, 'new Leaf($'.($i+1).')');
+					array_push($args, 'new ParserVal(new Leaf(Parser.'.$s.'))');
 				}
 			}
 		}
@@ -77,9 +77,11 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		echo ' ';
 
 		if ($grammar['start'] == $nonterminal) {
-			printf('{ $$ = new ParserVal(new SyntaxTree(new Node("%s", %s))); }', $nonterminal, join(', ', $args));
+			printf('{ $$ = new ParserVal(new SyntaxTree(new Node(NONTERM.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
+		} elseif (sizeof($args) > 1) {
+			printf('{ $$ = new ParserVal(new Node(NONTERM.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
 		} else {
-			printf('{ $$ = new ParserVal(new Node("%s", %s)); }', $nonterminal, join(', ', $args));
+			echo '{ $$ = $1; }';
 		}
 
 		echo "\n";

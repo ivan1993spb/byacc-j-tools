@@ -3,10 +3,10 @@
 require_once dirname(__FILE__).'/parseArgs.php';
 
 $settings = parseArgs(array(
-	'ignore_tokens'    => ''        // generate java classes for passed tokens
+	'save_token_value' => ''
 ), $argc, $argv);
 
-$settings['ignore_tokens'] = explode(',', $settings['ignore_tokens']);
+$settings['save_token_value'] = explode(',', $settings['save_token_value']);
 
 // Start parsing
 
@@ -68,8 +68,9 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			foreach ($ss as $i => $s) {
 				if (in_array($s, $nonterminals)) {
 					array_push($args, '(PTElement)$'.($i+1).'.obj');
-				} elseif (!in_array($s, $settings['ignore_tokens'])) {
-					array_push($args, 'new PTLeaf(Parser.'.$s.')');
+				} else {
+					$value = in_array($s, $settings['save_token_value']) ? '$'.($i+1).".sval" : "null";
+					array_push($args, 'new PTLeaf(Parser.'.$s.', '.$value.')');
 				}
 			}
 		}
@@ -77,12 +78,10 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		echo ' ';
 
 		if ($grammar['start'] == $nonterminal) {
-			printf('{ $$ = new ParserVal(new SyntaxTree(new Node(Nonterminal.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
-		} else /*if (sizeof($args) > 1) */{
-			printf('{ $$ = new ParserVal(new Node(Nonterminal.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
-		} /*else {
-			echo '{ $$ = $1; }';
-		}*/
+			printf('{ $$ = new ParserVal(new ParsingTree(new PTNode(Nonterminals.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
+		} else {
+			printf('{ $$ = new ParserVal(new PTNode(Nonterminals.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
+		}
 
 		echo "\n";
 	}

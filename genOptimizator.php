@@ -30,14 +30,25 @@ if ($grammar === FALSE) {
 	exit(1);
 }
 
-echo "new PTCallback() {\n";
+printf("package %s;\n", $settings['package']);
+echo "\n";
+echo "import edu.eltech.moevm.autogen.Parser;\n";
+echo "\n";
+echo "public class TreeOptimizer implements PTCallback {\n";
 echo "    @Override\n";
 echo "    public void processElement(PTElement e, int level) {\n";
 echo "        if (!(e instanceof PTNode)) {\n";
 echo "            return;\n";
 echo "        }\n";
 echo "        PTNode ptnode = (PTNode)e;\n";
-echo "        switch (ptnode.getNonterminal()) {\n";
+echo "        for (int i = 0; i < ptnode.getElements().size(); i++) {\n";
+echo "            PTElement child = ptnode.getElements().get(i);\n";
+echo "            if (!(child instanceof PTNode)) {\n";
+echo "                continue;\n";
+echo "            }\n";
+echo "            PTNode ptnodeChild = (PTNode)child;\n";
+
+echo "            switch (ptnodeChild.getNonterminal()) {\n";
 
 foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
@@ -46,21 +57,20 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	foreach ($statements as $statement) {
 		$ss = preg_split("/\s+/", $statement);
 		
-		if (sizeof($ss) == 2 && in_array($nonterminal, $ss)) {
-			// This node may be binary tree
+		if (in_array($nonterminal, $ss)) {
 			array_push($iterativeStatements, $ss);
 		}
 	}
 
 	if (!empty($iterativeStatements)) {
-		echo "        case ".strtoupper($nonterminal).":\n";
+		echo "            case ".strtoupper($nonterminal).":\n";
 
 		foreach ($iterativeStatements as $statement) {
-			echo "            // childs = ".json_encode($statement)."\n";
-			echo "            if (ptnode.getElements().size() == ".sizeof($statement).") {\n";
+			echo "                // childs = ".json_encode($statement)."\n";
+			echo "                if (ptnodeChild.getElements().size() == ".sizeof($statement).") {\n";
 
 			foreach ($statement as $i => $s) {
-				echo "                PTElement element$i = ptnode.getElements().get($i);\n";
+				echo "                    PTElement element$i = ptnodeChild.getElements().get($i);\n";
 			}
 
 			$conditions = array();
@@ -75,22 +85,41 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			}
 
 			if (!empty($conditions)) {
-				echo "                if (".join(" && ", $conditions).") {\n";
-				echo "                    // Совпало! Переподвешиваем дочерние узлы вместо родительского узла\n";
-				echo "                    break;\n";
-				echo "                }\n";
+				echo "                    if (".join(" && ", $conditions).") {\n";
+
+				for ($i = 0; $i < sizeof($statement); $i++) {
+					echo "                        ptnode.insertElementBefore(child, element$i);\n";
+				}
+				echo "                        System.out.println(\"removed $nonterminal\");\n";
+				echo "                        ptnode.remove(child);\n";
+				echo "                        i--;\n";
+				echo "                        break;\n";
+				echo "                    }\n";
 			}
 
-			echo "            }\n";
+			echo "                }\n";
 		}
 
-		echo "            break;\n";
+		echo "                break;\n";
 	}
 
 
 
 }
 
+echo "            }\n";
+echo "        }\n";
+echo "        for (int i = 0; i < ptnode.getElements().size(); i++) {\n";
+echo "            PTElement child = ptnode.getElements().get(i);\n";
+echo "            if (!(child instanceof PTNode)) {\n";
+echo "                continue;\n";
+echo "            }\n";
+echo "            PTNode ptnodeChild = (PTNode) child;\n";
+echo "            if (ptnodeChild.getElements().size() == 1) {\n";
+echo "                ptnode.insertElementBefore(ptnodeChild, ptnodeChild.getElements().get(0));\n";
+echo "                ptnode.remove(ptnodeChild);\n";
+echo "                i--;\n";
+echo "            }\n";
 echo "        }\n";
 echo "    }\n";
 echo "}\n";

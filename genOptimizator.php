@@ -90,7 +90,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 				for ($i = 0; $i < sizeof($statement); $i++) {
 					echo "                        ptnode.insertElementBefore(child, element$i);\n";
 				}
-				echo "                        System.out.println(\"removed $nonterminal\");\n";
+				echo "                        System.out.println(\"(recursive) removed \" + ptnodeChild.getNonterminal());\n";
 				echo "                        ptnode.remove(child);\n";
 				echo "                        i--;\n";
 				echo "                        break;\n";
@@ -117,6 +117,7 @@ echo "            }\n";
 echo "            PTNode ptnodeChild = (PTNode) child;\n";
 echo "            if (ptnodeChild.getElements().size() == 1) {\n";
 echo "                ptnode.insertElementBefore(ptnodeChild, ptnodeChild.getElements().get(0));\n";
+echo "                System.out.println(\"(one child) removed \" + ptnodeChild.getNonterminal());\n";
 echo "                ptnode.remove(ptnodeChild);\n";
 echo "                i--;\n";
 echo "            }\n";

@@ -57,7 +57,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	foreach ($statements as $statement) {
 		$ss = preg_split("/\s+/", $statement);
 		
-		if (in_array($nonterminal, $ss)) {
+		if (in_array($nonterminal, $ss) && count($ss) == 2) {
 			array_push($iterativeStatements, $ss);
 		}
 	}
@@ -102,24 +102,8 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
 		echo "                break;\n";
 	}
-
-
-
 }
 
-echo "            }\n";
-echo "        }\n";
-echo "        for (int i = 0; i < ptnode.getElements().size(); i++) {\n";
-echo "            PTElement child = ptnode.getElements().get(i);\n";
-echo "            if (!(child instanceof PTNode)) {\n";
-echo "                continue;\n";
-echo "            }\n";
-echo "            PTNode ptnodeChild = (PTNode) child;\n";
-echo "            if (ptnodeChild.getElements().size() == 1) {\n";
-echo "                ptnode.insertElementBefore(ptnodeChild, ptnodeChild.getElements().get(0));\n";
-echo "                System.out.println(\"(one child) removed \" + ptnodeChild.getNonterminal());\n";
-echo "                ptnode.remove(ptnodeChild);\n";
-echo "                i--;\n";
 echo "            }\n";
 echo "        }\n";
 echo "    }\n";

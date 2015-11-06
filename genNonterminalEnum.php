@@ -1,6 +1,7 @@
 <?php
 
 require_once dirname(__FILE__).'/parseArgs.php';
+require_once dirname(__FILE__).'/parseYacc.php';
 
 $settings = parseArgs(array(
 	'package'    => '',
@@ -11,10 +12,6 @@ if (empty($settings['package'])) {
 	fwrite(STDERR, "use --package=org.some.pack.age\n");
 	exit(1);
 }
-
-// Start parsing
-
-require_once dirname(__FILE__).'/parseYacc.php';
 
 $input = $argc > 1 ? $argv[1] : 'php://stdin';
 
@@ -34,7 +31,7 @@ printf("package %s;", $settings['package']);
 
 echo "\n\n";
 
-echo "public enum Nonterminal {\n";
+echo "public enum Nonterminals {\n";
 
 $nonterminals = array_map(function($s){
 	return '    '.strtoupper($s);

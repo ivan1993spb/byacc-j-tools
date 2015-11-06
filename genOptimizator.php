@@ -1,6 +1,7 @@
 <?php
 
 require_once dirname(__FILE__).'/parseArgs.php';
+require_once dirname(__FILE__).'/parseYacc.php';
 
 $settings = parseArgs(array(
 	'package'    => '',
@@ -11,10 +12,6 @@ if (empty($settings['package'])) {
 	fwrite(STDERR, "use --package=org.some.pack.age\n");
 	exit(1);
 }
-
-// Start parsing
-
-require_once dirname(__FILE__).'/parseYacc.php';
 
 $input = $argc > 1 ? $argv[1] : 'php://stdin';
 
@@ -34,7 +31,7 @@ printf("package %s;\n", $settings['package']);
 echo "\n";
 echo "import edu.eltech.moevm.autogen.Parser;\n";
 echo "\n";
-echo "public class TreeOptimizer implements PTCallback {\n";
+echo "public class TreeRecursionOptimizer implements PTCallback {\n";
 echo "    @Override\n";
 echo "    public void processElement(PTElement e, int level) {\n";
 echo "        if (!(e instanceof PTNode)) {\n";
@@ -47,7 +44,6 @@ echo "            if (!(child instanceof PTNode)) {\n";
 echo "                continue;\n";
 echo "            }\n";
 echo "            PTNode ptnodeChild = (PTNode)child;\n";
-
 echo "            switch (ptnodeChild.getNonterminal()) {\n";
 
 foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
@@ -57,20 +53,20 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	foreach ($statements as $statement) {
 		$ss = preg_split("/\s+/", $statement);
 		
-		if (in_array($nonterminal, $ss) && count($ss) == 2) {
+		if (in_array($nonterminal, $ss) /*&& empty(array_intersect($ss, $grammar['tokens'])) */&& sizeof($ss) == 2) {
 			array_push($iterativeStatements, $ss);
 		}
 	}
 
 	if (!empty($iterativeStatements)) {
-		echo "            case ".strtoupper($nonterminal).":\n";
+		echo "                case ".strtoupper($nonterminal).":\n";
 
 		foreach ($iterativeStatements as $statement) {
-			echo "                // childs = ".json_encode($statement)."\n";
-			echo "                if (ptnodeChild.getElements().size() == ".sizeof($statement).") {\n";
+			echo "                    // childs = ".json_encode($statement)."\n";
+			echo "                    if (ptnodeChild.getElements().size() == ".sizeof($statement).") {\n";
 
 			foreach ($statement as $i => $s) {
-				echo "                    PTElement element$i = ptnodeChild.getElements().get($i);\n";
+				echo "                        PTElement element$i = ptnodeChild.getElements().get($i);\n";
 			}
 
 			$conditions = array();
@@ -85,22 +81,22 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			}
 
 			if (!empty($conditions)) {
-				echo "                    if (".join(" && ", $conditions).") {\n";
+				echo "                        if (".join(" && ", $conditions).") {\n";
 
 				for ($i = 0; $i < sizeof($statement); $i++) {
-					echo "                        ptnode.insertElementBefore(child, element$i);\n";
+					echo "                            ptnode.insertElementBefore(child, element$i);\n";
 				}
-				echo "                        System.out.println(\"(recursive) removed \" + ptnodeChild.getNonterminal());\n";
-				echo "                        ptnode.remove(child);\n";
-				echo "                        i--;\n";
-				echo "                        break;\n";
-				echo "                    }\n";
+				echo "                            System.out.println(\"(recursive) removed \" + ptnodeChild.getNonterminal());\n";
+				echo "                            ptnode.remove(child);\n";
+				echo "                            i--;\n";
+				echo "                            break;\n";
+				echo "                        }\n";
 			}
 
-			echo "                }\n";
+			echo "                    }\n";
 		}
 
-		echo "                break;\n";
+		echo "                    break;\n";
 	}
 }
 

@@ -19,5 +19,5 @@ generation java code for yacc
 -----------------------------
 
 ```bash
-$ php genYaccJava.php --tokens=IDENTIFIER,CONSTANT,STRING_LITERAL,TYPE_NAME grammar.y 
+$ php genYaccJava.php grammar.y --save_token_value=IDENTIFIER,STRING_LITERAL,CONSTANT > /tmp/grammar.y && mv /tmp/grammar.y ./
 ```

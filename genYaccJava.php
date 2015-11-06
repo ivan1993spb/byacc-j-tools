@@ -1,16 +1,15 @@
 <?php
 
 require_once dirname(__FILE__).'/parseArgs.php';
+require_once dirname(__FILE__).'/parseYacc.php';
 
 $settings = parseArgs(array(
-	'save_token_value' => ''
+	'save_token_value' => '' // tokens which values should be saved
 ), $argc, $argv);
 
-$settings['save_token_value'] = explode(',', $settings['save_token_value']);
-
-// Start parsing
-
-require_once dirname(__FILE__).'/parseYacc.php';
+if (!empty($settings['save_token_value'])) {
+	$settings['save_token_value'] = explode(',', $settings['save_token_value']);
+}
 
 $input = $argc > 1 ? $argv[1] : 'php://stdin';
 
@@ -41,23 +40,14 @@ echo "%%\n";
 
 echo "\n";
 
-$nonterminals = array_keys($grammar['nonterminals']);
-
 foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
 	echo $nonterminal."\n";
 
-	$className = labelToClassName($nonterminal);
-
 	$maxlength = max(array_map('strlen', $statements));
 
 	foreach ($statements as $index => $statement) {
-		if ($index === 0) {
-			echo "\t: ";
-		} else {
-			echo "\t| ";
-		}
-
+		echo "\t".($index === 0 ? ':' : '|')." ";
 		printf("%-".$maxlength."s", $statement);
 
 		// Generate java code
@@ -66,7 +56,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		if (!empty($statement)) {
 			$ss = preg_split("/\s+/", $statement);
 			foreach ($ss as $i => $s) {
-				if (in_array($s, $nonterminals)) {
+				if (array_key_exists($s, $grammar['nonterminals'])) {
 					array_push($args, '(PTElement)$'.($i+1).'.obj');
 				} else {
 					$leafArgs = 'Parser.'.$s;
@@ -81,10 +71,13 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 
 		echo ' ';
 
+		// get java const name
+		$const = strtoupper($nonterminal);
+
 		if ($grammar['start'] == $nonterminal) {
-			printf('{ $$ = new ParserVal(new ParsingTree(new PTNode(Nonterminals.%s, %s))); }', strtoupper($nonterminal), join(', ', $args));
+			printf('{ $$ = new ParserVal(new ParsingTree(new PTNode(Nonterminals.%s, %s))); }', $const, join(', ', $args));
 		} else {
-			printf('{ $$ = new ParserVal(new PTNode(Nonterminals.%s, %s)); }', strtoupper($nonterminal), join(', ', $args));
+			printf('{ $$ = new ParserVal(new PTNode(Nonterminals.%s, %s)); }', $const, join(', ', $args));
 		}
 
 		echo "\n";
@@ -97,9 +90,3 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 echo "%%\n";
 
 echo $yaccFileParts[2];
-
-function labelToClassName($label) {
-	return preg_replace_callback('/(?:^|_)([a-z0-9])/', function ($matches) {
-		return strtoupper($matches[1]);
-	}, trim(strtolower($label)));
-}

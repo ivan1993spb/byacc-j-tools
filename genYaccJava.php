@@ -59,12 +59,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 				if (array_key_exists($s, $grammar['nonterminals'])) {
 					array_push($args, '(PTElement)$'.($i+1).'.obj');
 				} else {
-					$leafArgs = 'Parser.'.$s;
-					if (in_array($s, $settings['save_token_value'])) {
-						$leafArgs .= ', ';
-						$leafArgs .= '$'.($i+1).".sval";
-					}
-					array_push($args, 'new PTLeaf('.$leafArgs.')');
+					array_push($args, '(PTLeaf)$'.($i+1).'.obj');
 				}
 			}
 		}

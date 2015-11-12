@@ -53,7 +53,8 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	foreach ($statements as $statement) {
 		$ss = preg_split("/\s+/", $statement);
 		
-		if (in_array($nonterminal, $ss) /*&& empty(array_intersect($ss, $grammar['tokens'])) */&& sizeof($ss) == 2) {
+		if (in_array($nonterminal, $ss) /*&& empty(array_intersect($ss, $grammar['tokens'])) && */ &&
+			(sizeof($ss) == 2 || in_array($nonterminal, array("init_declarator_list")))) {
 			array_push($iterativeStatements, $ss);
 		}
 	}

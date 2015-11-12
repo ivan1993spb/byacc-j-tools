@@ -28,7 +28,7 @@ function parseYacc($grammar) {
 	// remove comments
 	$parts[1] = preg_replace("{/\*(?:.|\s)*?\*/}", "", $parts[1]);
 
-	$nonterminals = array();
+	$nonterminals = array( $start => '' );
 	if (preg_match_all('/([a-z_.]+)\s*:\s*((?:.|\s)*?)\s*;/i', $parts[1], $matches, PREG_SET_ORDER) !== FALSE) {
 		foreach ($matches as $m) {
 			$nonterminals[$m[1]] = preg_split("/\s*\|\s*/", $m[2]);
@@ -45,21 +45,15 @@ function parseYacc($grammar) {
 }
 
 if ($argv[0] === basename(__FILE__)) {
-	if ($argc > 1) {
-		$input = array_slice($argv, 1);
-	} else {
-		$input = array('php://stdin');
+	$input = $argc > 1 ? $argv[1] : 'php://stdin';
+
+	$data = file_get_contents($input);
+	if ($data === FALSE) {
+		fwrite(STDERR, "cannot read input\n");
+		exit(1);
 	}
 
-	foreach ($input as $filein) {
-		$data = file_get_contents($filein);
-		if ($data === FALSE) {
-			fwrite(STDERR, "cannot read input\n");
-			exit(1);
-		}
-
-		var_dump(parseYacc($data));
-	}
+	var_dump(parseYacc($data));
 
 	echo "\n";
 }

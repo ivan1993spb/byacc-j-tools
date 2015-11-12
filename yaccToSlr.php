@@ -24,6 +24,8 @@ $tokenPattern = '/(?<=\s|^)(?:'.join('|', array_map('preg_quote',
 	$grammar['tokens']
 )).')(?=\s|$)/i';
 
+// $i = 0;
+// unset($grammar['nonterminals']['root']);
 foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 	$statements = preg_replace_callback($tokenPattern, function ($matches) {
 		return strtolower($matches[0]);
@@ -39,6 +41,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 		if (empty($statement)) {
 			$statement = "''";
 		}
+		// printf("%-4d %s -> %s\n", ++$i, $nonterminal, $statement);
 		printf("%s -> %s\n", $nonterminal, $statement);
 	}
 

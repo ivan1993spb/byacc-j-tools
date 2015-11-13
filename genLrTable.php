@@ -40,8 +40,9 @@ foreach ($elements as $element) {
 	echo json_encode($element);
 	echo ": ";
 	echo json_encode(ofirst($element, $grammar));
-	echo "\n";
+	echo "\n";	 
 }
+
 
 ///////////////////// GOOD TEST ///////////////////////
 // foreach ($elements as $element1) {
@@ -59,8 +60,7 @@ foreach ($elements as $element) {
 // print_r($elements);
 
 
-
-die();
+/*
 
 ?><!DOCTYPE html>
 <html>
@@ -109,6 +109,7 @@ die();
 
 
 <?php
+//*/
 // print_r($elements);
 
 // define("RULE_NUMBER", 1);
@@ -155,6 +156,40 @@ function ofirst($element, $grammar) {
 	}
 
 	return $ofirst;
+}
+
+
+echo "--------------------\n";
+foreach ($elements as $element) {
+	echo json_encode($element);
+	echo ": ";
+	$_ofirst = array();
+	ofirst1($element, $grammar, $_ofirst);
+	echo json_encode($_ofirst);
+	echo "\n";	 
+}
+
+function ofirst1($element, $grammar, &$_ofirst=array()) {
+	if (!is_array($_ofirst)) {
+		$_ofirst = array();
+	}
+
+	if (in_array($element, $_ofirst)) {
+		return;
+	}
+	
+	array_push($_ofirst, $element);
+
+	if (in_array($element[ELEMENT_NAME], $grammar['tokens'])) {
+		return;
+	}
+
+	foreach ($grammar['rules'] as $ruleNumber => $rule) {
+		if ($rule[PARSE_GRAMMAR_NONTERMINAL] == $element[ELEMENT_NAME]) {
+			$current = array($rule[PARSE_GRAMMAR_STATEMENT][0], $ruleNumber);
+			ofirst1($current, $grammar, $_ofirst);
+		}
+	}
 }
 
 function oblow($element1, $element2, $grammar) {

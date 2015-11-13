@@ -5,7 +5,7 @@ define("PARSE_GRAMMAR_NONTERMINAL", 1);
 define("PARSE_GRAMMAR_STATEMENT", 2);
 
 function parseGrammar($data) {
-	preg_match_all("/([\w]+)'? -> (.+)/", $data, $rules, PREG_SET_ORDER);
+	preg_match_all("/([\w]+'?) -> (.+)/", $data, $rules, PREG_SET_ORDER);
 	for ($i = 0; $i < count($rules); $i++) {
 		$rules[$i][PARSE_GRAMMAR_STATEMENT] = preg_split("/\s+/", $rules[$i][PARSE_GRAMMAR_STATEMENT]);
 	}
@@ -20,7 +20,7 @@ function parseGrammar($data) {
 
 	$tokens = array_diff($elements, $nonterminals);
 	$nonterminals = array_unique($nonterminals);
-	
+
 	return array(
 		'nonterminals' => $nonterminals,
 		'tokens'       => $tokens,
@@ -37,7 +37,7 @@ if ($argv[0] === basename(__FILE__)) {
 		exit(1);
 	}
 
-	var_dump(parseGrammar($data));
+	print_r(parseGrammar($data));
 
 	echo "\n";
 }

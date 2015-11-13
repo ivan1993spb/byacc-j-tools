@@ -42,6 +42,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 			$statement = "''";
 		}
 		// printf("%-4d %s -> %s\n", ++$i, $nonterminal, $statement);
+		// TODO ROOT'
 		printf("%s -> %s\n", $nonterminal, $statement);
 	}
 

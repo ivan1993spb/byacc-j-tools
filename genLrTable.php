@@ -36,12 +36,12 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 // print_r($elements);
 // print_r(ofirst($elements[5], $grammar));
 
-foreach ($elements as $element) {
-	echo json_encode($element);
-	echo ": ";
-	echo json_encode(ofirst($element, $grammar));
-	echo "\n";	 
-}
+//foreach ($elements as $element) {
+//	echo json_encode($element);
+//	echo ": ";
+//	echo json_encode(ofirst1($element, $grammar));
+//	echo "\n";	 
+//}
 
 
 ///////////////////// GOOD TEST ///////////////////////
@@ -60,7 +60,7 @@ foreach ($elements as $element) {
 // print_r($elements);
 
 
-/*
+
 
 ?><!DOCTYPE html>
 <html>
@@ -109,7 +109,7 @@ foreach ($elements as $element) {
 
 
 <?php
-//*/
+//
 // print_r($elements);
 
 // define("RULE_NUMBER", 1);
@@ -120,52 +120,8 @@ foreach ($elements as $element) {
 // 	}
 // }
 
-echo "\n";
-
-function ofirst($element, $grammar) {
-	if (in_array($element[ELEMENT_NAME], $grammar['tokens'])) {
-		return array($element);
-	}
-	unset($grammar['rules'][$element[ELEMENT_RULE_NUMBER]]);
-	$ofirst = array($element);
-	
-	foreach ($grammar['rules'] as $ruleNumber => $rule) {
-		// if ($ruleNumber == $element[ELEMENT_RULE_NUMBER]) {
-			// continue;
-		// }
-		if ($rule[PARSE_GRAMMAR_NONTERMINAL] == $element[ELEMENT_NAME]) {
-
-			$_ofirst = ofirst(
-				//      0 1 2
-				// E -> B + C
-				array($rule[PARSE_GRAMMAR_STATEMENT][0], $ruleNumber),
-				$grammar
-			);
-
-			foreach ($_ofirst as $_element) {
-				foreach ($ofirst as $__element) {
-					if ($_element[ELEMENT_NAME] == $__element[ELEMENT_NAME]
-						&& $_element[ELEMENT_RULE_NUMBER] ==
-						$__element[ELEMENT_RULE_NUMBER]) {
-						continue 2;
-					}
-				}
-				array_push($ofirst, $_element);
-			}
-		}
-	}
-
-	return $ofirst;
-}
 
 
-echo "--------------------\n";
-foreach ($elements as $element) {
-	echo json_encode($element);
-	echo ": ";
-	echo json_encode(ofirst1($element, $grammar));
-	echo "\n";	 
-}
 
 function ofirst1($element, $grammar, &$_ofirst=array()) {
 	if (!is_array($_ofirst)) {
@@ -173,13 +129,13 @@ function ofirst1($element, $grammar, &$_ofirst=array()) {
 	}
 
 	if (in_array($element, $_ofirst)) {
-		return;
+		return $_ofirst;
 	}
 	
 	array_push($_ofirst, $element);
 
 	if (in_array($element[ELEMENT_NAME], $grammar['tokens'])) {
-		return;
+		return $_ofirst;
 	}
 
 	foreach ($grammar['rules'] as $ruleNumber => $rule) {
@@ -194,7 +150,7 @@ function ofirst1($element, $grammar, &$_ofirst=array()) {
 
 function oblow($element1, $element2, $grammar) {
 	if ($element1[ELEMENT_NAME] == "_|_") {
-		$ofirst_element1 = ofirst(array($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0), $grammar);
+		$ofirst_element1 = ofirst1(array($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0), $grammar);
 
 		foreach ($ofirst_element1 as $_element) {
 			if ($_element[ELEMENT_NAME] == $element2[ELEMENT_NAME] && $_element[ELEMENT_RULE_NUMBER] == $element2[ELEMENT_RULE_NUMBER]) {
@@ -214,9 +170,9 @@ function oblow($element1, $element2, $grammar) {
 	$i = array_search($element1[ELEMENT_NAME], $rule[PARSE_GRAMMAR_STATEMENT]);
 
 	if ($i !== FALSE && $i < count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
-		$ofirst_element1 = ofirst(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber), $grammar);
+		$ofirst_element1 = ofirst1(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber), $grammar);
 
-
+		if(!empty($ofirst_element1))
 		foreach ($ofirst_element1 as $_element) {
 			if ($_element[ELEMENT_NAME] == $element2[ELEMENT_NAME] && $_element[ELEMENT_RULE_NUMBER] == $element2[ELEMENT_RULE_NUMBER]) {
 				// echo 'ofirst('.json_encode(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber)).') == ';

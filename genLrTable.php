@@ -163,9 +163,7 @@ echo "--------------------\n";
 foreach ($elements as $element) {
 	echo json_encode($element);
 	echo ": ";
-	$_ofirst = array();
-	ofirst1($element, $grammar, $_ofirst);
-	echo json_encode($_ofirst);
+	echo json_encode(ofirst1($element, $grammar));
 	echo "\n";	 
 }
 
@@ -190,6 +188,8 @@ function ofirst1($element, $grammar, &$_ofirst=array()) {
 			ofirst1($current, $grammar, $_ofirst);
 		}
 	}
+
+	return $_ofirst;
 }
 
 function oblow($element1, $element2, $grammar) {

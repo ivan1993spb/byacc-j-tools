@@ -16,57 +16,146 @@ if ($grammar === FALSE) {
 	exit(1);
 }
 
+// Print rules
 $indent = strlen(strval(count($grammar))) + 4;
-
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 	fprintf(STDERR, "%-".$indent."d%s\n", $ruleNumber, $ruleArr[PARSE_GRAMMAR_RULE]);
 }
 
+define("INPUT_START", "__start__");
+define("INPUT_END", "__end__");
 
-$elements = array(array('_|_', 0));
 define("ELEMENT_NAME", 0);
 define("ELEMENT_RULE_NUMBER", 1);
 
+/*
+ * $allElements = [
+ *   [
+ *     ELEMENT_NAME        => ... ,
+ *     ELEMENT_RULE_NUMBER => ...
+ *   ],
+ *   ...
+ * ]
+ */
+
+$allElements = [[INPUT_START, 0]];
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 	foreach ($ruleArr[PARSE_GRAMMAR_STATEMENT] as $element) {
-		array_push($elements, array($element, $ruleNumber));
+		array_push($allElements, array($element, $ruleNumber));
 	}
 }
 
-// print_r($elements);
-// print_r(ofirst($elements[5], $grammar));
+class Table implements Iterator {
+	private $cols     = [];
+	private $rows     = [];
+	private $values   = [[]];
+	private $position = 0;
 
-//foreach ($elements as $element) {
-//	echo json_encode($element);
-//	echo ": ";
-//	echo json_encode(ofirst1($element, $grammar));
-//	echo "\n";	 
-//}
+	function setValue($col, $row, $value) {
+		if ($this->position !== 0) {
+			return;
+		}
+
+		if (!in_array($col, $this->cols)) {
+			array_push($this->cols, $col);
+		}
+		if (!in_array($row, $this->rows)) {
+			array_push($this->rows, $row);
+		}
+
+		$i = array_search($col, $this->cols);
+		$j = array_search($row, $this->rows);
+
+		$this->values[$i][$j] = $value;
+		print_r($this->values);
+	}
+
+	function getValue($col, $row) {
+		$i = array_search($col, $this->cols);
+		if ($i === FALSE) {
+			return null;
+		}
+
+		$j = array_search($row, $this->rows);
+		if ($j === FALSE) {
+			return null;
+		}
+
+		return $this->values[$i][$j];
+	}
+
+	function getWidth() {
+		return count($this->cols);
+	}
+
+	function getHeight() {
+		return count($this->rows);
+	}
+
+	function exists($col, $row) {
+		$i = array_search($col, $this->cols);
+		if ($i === FALSE) {
+			return FALSE;
+		}
+
+		$j = array_search($row, $this->rows);
+		if ($j === FALSE) {
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	function rewind() {
+		$this->position = 0;
+	}
+
+	function current() {
+		list($i, $j) = $this->_getIJ();
+		return $this->values[$i][$j];
+	}
+
+	private function _getIJ() {
+		$i = $this->position % count($this->cols);
+		$j = ($this->position - $this->position%count($this->cols)) / count($this->cols);
+		return [$i, $j]
+	}
+
+	function key() {
+		return $this->position;
+	}
+
+	function next() {
+		++$this->position;
+	}
+
+	function valid() {
+		return (count($this->cols) * count($this->rows)) > $this->position;
+	}
+}
+
+$t = new Table();
+$t->setValue(1, 2, 33);
+$t->setValue(2, 1, 44);
+$t->setValue(30, 1, 66);
+
+echo ':::';
+foreach ($t as $key => $value) {
+	echo "\n\n";
+}
+var_dump($t->getValue(1, 2));
+var_dump($t->getValue(2, 1));
+var_dump($t->getValue(30, 1));
+var_dump($t->getValue(1, 2));
 
 
-///////////////////// GOOD TEST ///////////////////////
-// foreach ($elements as $element1) {
-// 	foreach ($elements as $element2) {
-// 		if (oblow($element1, $element2, $grammar))
-// 		printf("%s%d OBLOW %s%d == %d\n", $element1[ELEMENT_NAME], $element1[ELEMENT_RULE_NUMBER],
-// 			$element2[ELEMENT_NAME], $element2[ELEMENT_RULE_NUMBER], oblow($element1, $element2, $grammar));
-		
-// 		// echo " == ". (oblow($element1, $element2, $grammar) ? "1" : "0");
-
-// 		// echo "\n";
-// 	}
-// }
-///////////////////////////////////////////////////////////////////////////////////
-// print_r($elements);
-
-
-
-
+$tableStackSymbols = array();
+die();
 ?><!DOCTYPE html>
 <html>
-<head>
-	<title></title>
-</head>
+	<head>
+		<title></title>
+	</head>
 	<body>
 	<table border="1">
 		<thead>
@@ -81,7 +170,7 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ($elements as $element):?>
+			<?php foreach ($allElements as $element):?>
 				<tr>
 					<td><?=$element[ELEMENT_NAME]?><sub><?=$element[ELEMENT_RULE_NUMBER]?></sub></td>
 					<?php
@@ -89,8 +178,8 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 
 						foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $value){
 							echo '<td>';
-						 	foreach ($elements as $_element) {
-						 		if ($_element[ELEMENT_NAME] == $value && oblow($element, $_element, $grammar)) {
+						 	foreach ($allElements as $_element) {
+						 		if ($_element[ELEMENT_NAME] == $value && getOblow($element, $_element, $grammar)) {
 						 			echo $_element[ELEMENT_NAME].'<sub>'.$_element[ELEMENT_RULE_NUMBER]."</sub>\n";
 						 		}
 						 	}
@@ -109,21 +198,8 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 
 
 <?php
-//
-// print_r($elements);
 
-// define("RULE_NUMBER", 1);
-
-// foreach ($grammar as $ruleNumber => $ruleArr) {
-// 	foreach ($ruleArr[PARSE_GRAMMAR_STATEMENT] as $element) {
-// 		array_push($elements, array($element, $ruleNumber));
-// 	}
-// }
-
-
-
-
-function ofirst1($element, $grammar, &$_ofirst=array()) {
+function getOfirst($element, $grammar, &$_ofirst=array()) {
 	if (!is_array($_ofirst)) {
 		$_ofirst = array();
 	}
@@ -141,57 +217,31 @@ function ofirst1($element, $grammar, &$_ofirst=array()) {
 	foreach ($grammar['rules'] as $ruleNumber => $rule) {
 		if ($rule[PARSE_GRAMMAR_NONTERMINAL] == $element[ELEMENT_NAME]) {
 			$current = array($rule[PARSE_GRAMMAR_STATEMENT][0], $ruleNumber);
-			ofirst1($current, $grammar, $_ofirst);
+			getOfirst($current, $grammar, $_ofirst);
 		}
 	}
 
 	return $_ofirst;
 }
 
-function oblow($element1, $element2, $grammar) {
-	if ($element1[ELEMENT_NAME] == "_|_") {
-		$ofirst_element1 = ofirst1(array($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0), $grammar);
+function getOblow($element1, $element2, $grammar) {
+	$nextElement = null;
 
-		foreach ($ofirst_element1 as $_element) {
-			if ($_element[ELEMENT_NAME] == $element2[ELEMENT_NAME] && $_element[ELEMENT_RULE_NUMBER] == $element2[ELEMENT_RULE_NUMBER]) {
-				// echo 'ofirst('.json_encode(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber)).') == ';
-				// echo json_encode($ofirst_element1). " // ";
-				// echo $rule[PARSE_GRAMMAR_RULE]."\n";
-				return TRUE;
-			}
+	if ($element1[ELEMENT_NAME] == INPUT_START) {
+		$nextElement = array($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0);
+	} else {
+		$rule = $grammar['rules'][$element1[ELEMENT_RULE_NUMBER]];
+		$i = array_search($element1[ELEMENT_NAME], $rule[PARSE_GRAMMAR_STATEMENT]);
+		if ($i === FALSE || $i >= count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
+			return FALSE;
 		}
+		$nextElement = array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $element1[ELEMENT_RULE_NUMBER]);
+	}
 
+	$ofirstSet = getOfirst($nextElement, $grammar);
+	if (empty($ofirstSet)) {
 		return FALSE;
 	}
 
-	$rule = $grammar['rules'][$element1[ELEMENT_RULE_NUMBER]];
-	$ruleNumber = $element1[ELEMENT_RULE_NUMBER];
-
-	$i = array_search($element1[ELEMENT_NAME], $rule[PARSE_GRAMMAR_STATEMENT]);
-
-	if ($i !== FALSE && $i < count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
-		$ofirst_element1 = ofirst1(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber), $grammar);
-
-		if(!empty($ofirst_element1))
-		foreach ($ofirst_element1 as $_element) {
-			if ($_element[ELEMENT_NAME] == $element2[ELEMENT_NAME] && $_element[ELEMENT_RULE_NUMBER] == $element2[ELEMENT_RULE_NUMBER]) {
-				// echo 'ofirst('.json_encode(array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $ruleNumber)).') == ';
-				// echo json_encode($ofirst_element1). " // ";
-				// echo $rule[PARSE_GRAMMAR_RULE]."\n";
-				return TRUE;
-			}
-		}
-	}
-
-	return FALSE;
+	return in_array($element2, $ofirstSet);
 }
-/*
-
-епсилон E = EOF
-Допуск достигли корня
-
-3 E -> a b c E d
-
-ofirst(E3) == E3, a
-
-*/

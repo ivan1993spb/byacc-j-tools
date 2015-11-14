@@ -16,9 +16,13 @@ class Element {
 	}
 
 	function __toString() {
+		if ($this->name == INPUT_START || $this->name == INPUT_END) {
+			return '{'.$this->name.'}';
+		}
 		return sprintf("{%s|%d}", $this->name, $this->ruleNumber);
 	}
 }
+
 function getOfirst(Element $element, $grammar) {
 	if (in_array($element->name, $grammar['tokens'])) {
 		return [$element];
@@ -45,6 +49,11 @@ function getOfirst(Element $element, $grammar) {
 
 	return $ofirst;
 }
+
+function getFollow(Element $element, $grammar) {
+	
+}
+
 
 function getOblow(Element $element1, Element $element2, $grammar) {
 	$nextElement = null;
@@ -150,15 +159,19 @@ foreach ($tableStackSymbols as $marker => $elemSet) {
 	fprintf(STDERR, "%s c (%s)\n", $marker, join(', ', $elemSet));
 }
 
-fprintf(STDERR, "exec time = %f\n", microtime(true)-START_TIME);
 die();
-
 ?><!DOCTYPE html>
 <html>
 	<head>
 		<title></title>
 	</head>
 	<body>
+		<table border="1">
+			<? foreach ($tableStackSymbols as $marker => $elemSet): ?>
+				<tr><td><?=$marker?></td><td><?=join(', ', $elemSet)?></td></tr>
+			<? endforeach; ?>
+		</table>
+		<br/>
 		<table border="1">
 			<thead>
 				<tr>
@@ -173,14 +186,30 @@ die();
 					<tr>
 						<td><?=$marker?></td>
 						<?
-							// foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName) {
-							// 	foreach ($elements as $element) {
-							// 		if ($element->name == $elementName) {
-							// 			echo '<td>'.$elementName.'</td>';
-							// 			break;
-							// 		}
-							// 	}
-							// }
+
+
+							foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName) {
+
+								echo '<td>';
+								$oblowElems = array();
+								foreach ($allElements as $element) {
+									foreach ($allElements as $_element) {
+										if ($element->name == $elements[0]->name &&
+											$_element->name == $elementName &&
+											getOblow($element, $_element, $grammar)) {
+
+											array_push($oblowElems, $_element);
+										}
+									}
+								}
+
+								$index = array_search($oblowElems, $tableStackSymbols);
+								if ($index !== FALSE) {
+									echo $index;
+								}
+								echo '</td>';
+							}
+
 
 						?>
 					</tr>

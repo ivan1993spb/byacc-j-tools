@@ -1,4 +1,6 @@
 <?php
+$starttime = microtime(true);
+$________________i = 0;
 
 require_once dirname(__FILE__).'/parseGrammar.php';
 
@@ -118,7 +120,7 @@ class Table implements Iterator {
 	private function _getIJ() {
 		$i = $this->position % count($this->cols);
 		$j = ($this->position - $this->position%count($this->cols)) / count($this->cols);
-		return [$i, $j]
+		return [$i, $j];
 	}
 
 	function key() {
@@ -150,7 +152,6 @@ var_dump($t->getValue(1, 2));
 
 
 $tableStackSymbols = array();
-die();
 ?><!DOCTYPE html>
 <html>
 	<head>
@@ -199,7 +200,12 @@ die();
 
 <?php
 
+
+
 function getOfirst($element, $grammar, &$_ofirst=array()) {
+	global $________________i;
+	$________________i++;
+
 	if (!is_array($_ofirst)) {
 		$_ofirst = array();
 	}
@@ -228,6 +234,10 @@ function getOblow($element1, $element2, $grammar) {
 	$nextElement = null;
 
 	if ($element1[ELEMENT_NAME] == INPUT_START) {
+		if (empty($grammar['rules'])) {
+			return FALSE;
+		}
+		// First element of first grammar rule
 		$nextElement = array($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0);
 	} else {
 		$rule = $grammar['rules'][$element1[ELEMENT_RULE_NUMBER]];
@@ -235,6 +245,7 @@ function getOblow($element1, $element2, $grammar) {
 		if ($i === FALSE || $i >= count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
 			return FALSE;
 		}
+		// First element after $element1
 		$nextElement = array($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $element1[ELEMENT_RULE_NUMBER]);
 	}
 
@@ -245,3 +256,11 @@ function getOblow($element1, $element2, $grammar) {
 
 	return in_array($element2, $ofirstSet);
 }
+
+
+
+
+$exectime = microtime(true) - $starttime;
+printf("ofirst i: %d\n", $________________i);
+printf("ofirst times per sec: %d\n", $________________i/$exectime);
+printf("exec time %.4F sec\n", $exectime);

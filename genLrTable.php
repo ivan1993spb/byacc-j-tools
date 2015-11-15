@@ -51,9 +51,93 @@ function getOfirst(Element $element, $grammar) {
 }
 
 function getFollow(Element $element, $grammar) {
-	
-}
+	$tokens = [];
+	$nonterminals = [];
 
+	$index = array_search($element->name, $grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT]);
+	if ($index === FALSE) {
+		return [];
+	}
+
+	// if passed element is last element of rule
+	if ($index+1 === sizeof($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT])) {
+		// element names to get next element
+		$todo = [$element->name];
+
+		while (sizeof($todo) > 0) {
+			$elementName = array_shift($todo);
+			// issetFlag will be TRUE if rules which are contained current element exists 
+			$issetFlag = FALSE;
+
+			foreach ($grammar['rules'] as $rule) {
+				$index = array_search($elementName, $rule[PARSE_GRAMMAR_STATEMENT]);
+
+				if ($index !== FALSE) {
+					if (!$issetFlag) {
+						$issetFlag = TRUE;
+					}
+					
+					if ($index+1 === sizeof($rule[PARSE_GRAMMAR_STATEMENT])) {
+						// if is last element
+						if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo)) {
+							array_push($todo, $rule[PARSE_GRAMMAR_NONTERMINAL]);
+						}
+					} else {
+						// else get next element
+						$nextElementName = $rule[PARSE_GRAMMAR_STATEMENT][$index+1];
+
+						if (in_array($nextElementName, $grammar['tokens'])) {
+							if (!in_array($nextElementName, $tokens)) {
+								array_push($tokens, $nextElementName);
+							}
+						} elseif (!in_array($nextElementName, $nonterminals)) {
+							array_push($nonterminals, $nextElementName);
+						}
+					}
+				}
+			}
+
+			if (!$issetFlag) {
+				// curr elem is root if rules which are contained current element were not found
+				array_push($tokens, INPUT_END);
+			}
+		}
+	} else {
+		$nextElementName = $grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT][$index+1];
+		if (in_array($nextElementName, $grammar['tokens'])) {
+			array_push($tokens, $nextElementName);
+		} else {
+			array_push($nonterminals, $nextElementName);
+		}
+	}
+
+	if (sizeof($nonterminals) > 0) {
+		$parsedNonterminals = [];
+
+		while (sizeof($nonterminals) > 0) {
+			$nonterminalName = array_shift($nonterminals);
+			array_push($parsedNonterminals, $nonterminalName);
+
+			foreach ($grammar['rules'] as $rule) {
+				if ($nonterminalName == $rule[PARSE_GRAMMAR_NONTERMINAL] &&
+					sizeof($rule[PARSE_GRAMMAR_NONTERMINAL]) > 0) {
+
+					$nextElementName = $rule[PARSE_GRAMMAR_STATEMENT][0];
+
+					if (in_array($nextElementName, $grammar['tokens'])) {
+						if (!in_array($nextElementName, $tokens)) {
+							array_push($tokens, $nextElementName);
+						}
+					} elseif (!in_array($nextElementName, $nonterminals) && !in_array($nextElementName, $parsedNonterminals)) {
+						array_push($nonterminals, $nextElementName);
+					}
+				}
+			}
+		}
+	}
+
+	return $tokens;
+}
 
 function getOblow(Element $element1, Element $element2, $grammar) {
 	$nextElement = null;
@@ -157,6 +241,11 @@ foreach ($allElements as $element) {
 fwrite(STDERR, "Table stack symbols:\n");
 foreach ($tableStackSymbols as $marker => $elemSet) {
 	fprintf(STDERR, "%s c (%s)\n", $marker, join(', ', $elemSet));
+}
+
+fwrite(STDERR, "FOLLOW(x) table:\n");
+foreach ($allElements as $element) {
+	fprintf(STDERR, "FOLLOW(%s) = %s\n", $element, json_encode(getFollow($element, $grammar)));
 }
 
 die();

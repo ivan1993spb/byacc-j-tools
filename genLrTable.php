@@ -50,64 +50,47 @@ function getOfirst(Element $element, $grammar) {
 	return $ofirst;
 }
 
-function getFollow(Element $element, $grammar) {
-	$tokens = [];
+function getFollow($elementName, $grammar) {
+	$tokens       = [];
 	$nonterminals = [];
+	$todo         = [$elementName];
 
-	$index = array_search($element->name, $grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT]);
-	if ($index === FALSE) {
-		return [];
-	}
+	while (sizeof($todo) > 0) {
+		$elementName = array_shift($todo);
+		// issetFlag will be TRUE if rules which are contained current element exists 
+		$issetFlag = FALSE;
 
-	// if passed element is last element of rule
-	if ($index+1 === sizeof($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT])) {
-		// element names to get next element
-		$todo = [$element->name];
+		foreach ($grammar['rules'] as $rule) {
+			$index = array_search($elementName, $rule[PARSE_GRAMMAR_STATEMENT]);
 
-		while (sizeof($todo) > 0) {
-			$elementName = array_shift($todo);
-			// issetFlag will be TRUE if rules which are contained current element exists 
-			$issetFlag = FALSE;
-
-			foreach ($grammar['rules'] as $rule) {
-				$index = array_search($elementName, $rule[PARSE_GRAMMAR_STATEMENT]);
-
-				if ($index !== FALSE) {
-					if (!$issetFlag) {
-						$issetFlag = TRUE;
+			if ($index !== FALSE) {
+				if (!$issetFlag) {
+					$issetFlag = TRUE;
+				}
+				
+				if ($index+1 === sizeof($rule[PARSE_GRAMMAR_STATEMENT])) {
+					// if is last element
+					if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo)) {
+						array_push($todo, $rule[PARSE_GRAMMAR_NONTERMINAL]);
 					}
-					
-					if ($index+1 === sizeof($rule[PARSE_GRAMMAR_STATEMENT])) {
-						// if is last element
-						if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo)) {
-							array_push($todo, $rule[PARSE_GRAMMAR_NONTERMINAL]);
-						}
-					} else {
-						// else get next element
-						$nextElementName = $rule[PARSE_GRAMMAR_STATEMENT][$index+1];
+				} else {
+					// else get next element
+					$nextElementName = $rule[PARSE_GRAMMAR_STATEMENT][$index+1];
 
-						if (in_array($nextElementName, $grammar['tokens'])) {
-							if (!in_array($nextElementName, $tokens)) {
-								array_push($tokens, $nextElementName);
-							}
-						} elseif (!in_array($nextElementName, $nonterminals)) {
-							array_push($nonterminals, $nextElementName);
+					if (in_array($nextElementName, $grammar['tokens'])) {
+						if (!in_array($nextElementName, $tokens)) {
+							array_push($tokens, $nextElementName);
 						}
+					} elseif (!in_array($nextElementName, $nonterminals)) {
+						array_push($nonterminals, $nextElementName);
 					}
 				}
 			}
-
-			if (!$issetFlag) {
-				// curr elem is root if rules which are contained current element were not found
-				array_push($tokens, INPUT_END);
-			}
 		}
-	} else {
-		$nextElementName = $grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT][$index+1];
-		if (in_array($nextElementName, $grammar['tokens'])) {
-			array_push($tokens, $nextElementName);
-		} else {
-			array_push($nonterminals, $nextElementName);
+
+		if (!$issetFlag) {
+			// curr elem is root if rules which are contained current element were not found
+			array_push($tokens, INPUT_END);
 		}
 	}
 
@@ -128,7 +111,8 @@ function getFollow(Element $element, $grammar) {
 						if (!in_array($nextElementName, $tokens)) {
 							array_push($tokens, $nextElementName);
 						}
-					} elseif (!in_array($nextElementName, $nonterminals) && !in_array($nextElementName, $parsedNonterminals)) {
+					} elseif (!in_array($nextElementName, $nonterminals) &&
+						!in_array($nextElementName, $parsedNonterminals)) {
 						array_push($nonterminals, $nextElementName);
 					}
 				}
@@ -244,23 +228,29 @@ foreach ($tableStackSymbols as $marker => $elemSet) {
 }
 
 fwrite(STDERR, "FOLLOW(x) table:\n");
-foreach ($allElements as $element) {
+foreach ($grammar['nonterminals'] as $element) {
 	fprintf(STDERR, "FOLLOW(%s) = %s\n", $element, json_encode(getFollow($element, $grammar)));
 }
 
-die();
 ?><!DOCTYPE html>
 <html>
 	<head>
-		<title></title>
+		<title>SLR(1) Parser</title>
+		<style type="text/css">
+			table { display: inline-table; margin: 10px; }
+		</style>
 	</head>
 	<body>
 		<table border="1">
-			<? foreach ($tableStackSymbols as $marker => $elemSet): ?>
-				<tr><td><?=$marker?></td><td><?=join(', ', $elemSet)?></td></tr>
-			<? endforeach; ?>
+			<thead>
+				<tr><th>V<sub>p</sub></th><th></th></tr>
+			</thead>
+			<tbody>
+				<? foreach ($tableStackSymbols as $marker => $elemSet): ?>
+					<tr><td><?=$marker?></td><td><?=join(', ', $elemSet)?></td></tr>
+				<? endforeach; ?>
+			</tbody>
 		</table>
-		<br/>
 		<table border="1">
 			<thead>
 				<tr>
@@ -299,6 +289,69 @@ die();
 								echo '</td>';
 							}
 
+
+						?>
+					</tr>
+				<? endforeach; ?>
+			</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>f(a)</th>
+					<? foreach ($grammar['tokens'] as $token):?>
+						<th><?=$token?></th>
+					<? endforeach; ?>
+					<th><?=INPUT_END?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<? foreach ($tableStackSymbols as $marker => $elements):?>
+					<tr>
+						<td><?=$marker?></td>
+						<?
+
+
+							foreach (array_merge($grammar['tokens'], [INPUT_END]) as $token) {
+								echo '<td>';
+								
+								if ($token === INPUT_END) {
+									$isset_0 = FALSE;
+									foreach ($elements as $element) {
+										if ($element->ruleNumber === 0 && $element->name != INPUT_START) {
+											$isset_0 = TRUE;
+											break;
+										}
+									}
+									if ($isset_0) {
+										echo 'Д';
+										continue;
+									}
+								} else {
+									foreach ($allElements as $element) {
+										foreach ($allElements as $_element) {
+											if ($element->name == $elements[0]->name &&
+												$_element->name == $token &&
+												getOblow($element, $_element, $grammar)) {
+												echo 'П';
+												continue 3;
+											}
+										}
+									}
+								}
+
+								foreach ($elements as $element) {
+									if ($element->name == end($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT])) {
+										if (in_array($token, getFollow($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_NONTERMINAL], $grammar))) {
+											echo 'С';
+											echo $element->ruleNumber;
+											break;
+										}
+									}
+								}
+
+								echo '</td>';
+							}
 
 						?>
 					</tr>

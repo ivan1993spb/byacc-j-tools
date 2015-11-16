@@ -238,6 +238,8 @@ foreach ($grammar['nonterminals'] as $element) {
 		<title>SLR(1) Parser</title>
 		<style type="text/css">
 			table { display: inline-table; margin: 10px; }
+			td, th { text-align: center; padding: 5px; }
+			tbody tr td:first-child { font-weight: bold; }
 		</style>
 	</head>
 	<body>

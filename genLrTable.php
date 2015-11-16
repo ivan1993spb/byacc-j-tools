@@ -241,6 +241,7 @@ foreach ($grammar['nonterminals'] as $element) {
 ?><!DOCTYPE html>
 <html>
 	<head>
+		<meta charset="utf-8"/>
 		<title>SLR(1) Parser</title>
 		<style type="text/css">
 			table { display: inline-table; margin: 10px; }

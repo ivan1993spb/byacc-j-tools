@@ -1,413 +1,407 @@
-Grammar rules:
-0      ROOT -> TRANSLATION_UNIT
-1      PRIMARY_EXPRESSION -> identifier
-2      PRIMARY_EXPRESSION -> constant
-3      PRIMARY_EXPRESSION -> string_literal
-4      PRIMARY_EXPRESSION -> rbleft EXPRESSION rbright
-5      POSTFIX_EXPRESSION -> PRIMARY_EXPRESSION
-6      POSTFIX_EXPRESSION -> POSTFIX_EXPRESSION bracketleft EXPRESSION bracketright
-7      POSTFIX_EXPRESSION -> POSTFIX_EXPRESSION rbleft rbright
-8      POSTFIX_EXPRESSION -> POSTFIX_EXPRESSION rbleft ARGUMENT_EXPRESSION_LIST rbright
-9      POSTFIX_EXPRESSION -> POSTFIX_EXPRESSION inc_op
-10     POSTFIX_EXPRESSION -> POSTFIX_EXPRESSION dec_op
-11     ARGUMENT_EXPRESSION_LIST -> ASSIGNMENT_EXPRESSION
-12     ARGUMENT_EXPRESSION_LIST -> ARGUMENT_EXPRESSION_LIST comma ASSIGNMENT_EXPRESSION
-13     UNARY_EXPRESSION -> POSTFIX_EXPRESSION
-14     UNARY_EXPRESSION -> inc_op UNARY_EXPRESSION
-15     UNARY_EXPRESSION -> dec_op UNARY_EXPRESSION
-16     UNARY_EXPRESSION -> minus CAST_EXPRESSION
-17     UNARY_EXPRESSION -> excl CAST_EXPRESSION
-18     UNARY_EXPRESSION -> sizeof UNARY_EXPRESSION
-19     UNARY_EXPRESSION -> sizeof rbleft TYPE_SPECIFIER rbright
-20     UNARY_EXPRESSION -> re rbleft constant rbright
-21     UNARY_EXPRESSION -> re rbleft identifier rbright
-22     UNARY_EXPRESSION -> im rbleft constant rbright
-23     UNARY_EXPRESSION -> im rbleft identifier rbright
-24     UNARY_EXPRESSION -> mod rbleft constant rbright
-25     UNARY_EXPRESSION -> mod rbleft identifier rbright
-26     UNARY_EXPRESSION -> print rbleft string_literal rbright
-27     UNARY_EXPRESSION -> print rbleft identifier rbright
-28     CAST_EXPRESSION -> UNARY_EXPRESSION
-29     CAST_EXPRESSION -> rbleft TYPE_SPECIFIER rbright CAST_EXPRESSION
-30     MULTIPLICATIVE_EXPRESSION -> CAST_EXPRESSION
-31     MULTIPLICATIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION star CAST_EXPRESSION
-32     MULTIPLICATIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION slash CAST_EXPRESSION
-33     MULTIPLICATIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION percent CAST_EXPRESSION
-34     ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION
-35     ADDITIVE_EXPRESSION -> ADDITIVE_EXPRESSION plus MULTIPLICATIVE_EXPRESSION
-36     ADDITIVE_EXPRESSION -> ADDITIVE_EXPRESSION minus MULTIPLICATIVE_EXPRESSION
-37     SHIFT_EXPRESSION -> ADDITIVE_EXPRESSION
-38     SHIFT_EXPRESSION -> SHIFT_EXPRESSION left_op ADDITIVE_EXPRESSION
-39     SHIFT_EXPRESSION -> SHIFT_EXPRESSION right_op ADDITIVE_EXPRESSION
-40     RELATIONAL_EXPRESSION -> SHIFT_EXPRESSION
-41     RELATIONAL_EXPRESSION -> RELATIONAL_EXPRESSION less SHIFT_EXPRESSION
-42     RELATIONAL_EXPRESSION -> RELATIONAL_EXPRESSION greater SHIFT_EXPRESSION
-43     RELATIONAL_EXPRESSION -> RELATIONAL_EXPRESSION le_op SHIFT_EXPRESSION
-44     RELATIONAL_EXPRESSION -> RELATIONAL_EXPRESSION ge_op SHIFT_EXPRESSION
-45     EQUALITY_EXPRESSION -> RELATIONAL_EXPRESSION
-46     EQUALITY_EXPRESSION -> EQUALITY_EXPRESSION eq_op RELATIONAL_EXPRESSION
-47     EQUALITY_EXPRESSION -> EQUALITY_EXPRESSION ne_op RELATIONAL_EXPRESSION
-48     AND_EXPRESSION -> EQUALITY_EXPRESSION
-49     AND_EXPRESSION -> AND_EXPRESSION amp EQUALITY_EXPRESSION
-50     EXCLUSIVE_OR_EXPRESSION -> AND_EXPRESSION
-51     EXCLUSIVE_OR_EXPRESSION -> EXCLUSIVE_OR_EXPRESSION caret AND_EXPRESSION
-52     INCLUSIVE_OR_EXPRESSION -> EXCLUSIVE_OR_EXPRESSION
-53     INCLUSIVE_OR_EXPRESSION -> INCLUSIVE_OR_EXPRESSION bar EXCLUSIVE_OR_EXPRESSION
-54     LOGICAL_AND_EXPRESSION -> INCLUSIVE_OR_EXPRESSION
-55     LOGICAL_AND_EXPRESSION -> LOGICAL_AND_EXPRESSION and_op INCLUSIVE_OR_EXPRESSION
-56     LOGICAL_OR_EXPRESSION -> LOGICAL_AND_EXPRESSION
-57     LOGICAL_OR_EXPRESSION -> LOGICAL_OR_EXPRESSION or_op LOGICAL_AND_EXPRESSION
-58     CONDITIONAL_EXPRESSION -> LOGICAL_OR_EXPRESSION
-59     CONDITIONAL_EXPRESSION -> LOGICAL_OR_EXPRESSION question EXPRESSION colon CONDITIONAL_EXPRESSION
-60     ASSIGNMENT_EXPRESSION -> CONDITIONAL_EXPRESSION
-61     ASSIGNMENT_EXPRESSION -> POSTFIX_EXPRESSION equal ASSIGNMENT_EXPRESSION
-62     EXPRESSION -> ASSIGNMENT_EXPRESSION
-63     EXPRESSION -> EXPRESSION comma ASSIGNMENT_EXPRESSION
-64     CONSTANT_EXPRESSION -> CONDITIONAL_EXPRESSION
-65     DECLARATION -> DECLARATION_SPECIFIERS semicolon
-66     DECLARATION -> DECLARATION_SPECIFIERS INIT_DECLARATOR_LIST semicolon
-67     DECLARATION_SPECIFIERS -> TYPE_SPECIFIER
-68     DECLARATION_SPECIFIERS -> TYPE_SPECIFIER DECLARATION_SPECIFIERS
-69     INIT_DECLARATOR_LIST -> INIT_DECLARATOR
-70     INIT_DECLARATOR_LIST -> INIT_DECLARATOR_LIST comma INIT_DECLARATOR
-71     INIT_DECLARATOR -> DIRECT_DECLARATOR
-72     INIT_DECLARATOR -> DIRECT_DECLARATOR equal INITIALIZER
-73     TYPE_SPECIFIER -> void
-74     TYPE_SPECIFIER -> complex
-75     TYPE_SPECIFIER -> char
-76     TYPE_SPECIFIER -> short
-77     TYPE_SPECIFIER -> int
-78     TYPE_SPECIFIER -> long
-79     TYPE_SPECIFIER -> float
-80     TYPE_SPECIFIER -> double
-81     TYPE_SPECIFIER -> bool
-82     DIRECT_DECLARATOR -> identifier
-83     DIRECT_DECLARATOR -> rbleft DIRECT_DECLARATOR rbright
-84     DIRECT_DECLARATOR -> DIRECT_DECLARATOR bracketleft CONSTANT_EXPRESSION bracketright
-85     DIRECT_DECLARATOR -> DIRECT_DECLARATOR bracketleft bracketright
-86     DIRECT_DECLARATOR -> DIRECT_DECLARATOR rbleft PARAMETER_LIST rbright
-87     DIRECT_DECLARATOR -> DIRECT_DECLARATOR rbleft IDENTIFIER_LIST rbright
-88     DIRECT_DECLARATOR -> DIRECT_DECLARATOR rbleft rbright
-89     PARAMETER_LIST -> PARAMETER_DECLARATION
-90     PARAMETER_LIST -> PARAMETER_LIST comma PARAMETER_DECLARATION
-91     PARAMETER_DECLARATION -> DECLARATION_SPECIFIERS DIRECT_DECLARATOR
-92     PARAMETER_DECLARATION -> DECLARATION_SPECIFIERS ABSTRACT_DECLARATOR
-93     PARAMETER_DECLARATION -> DECLARATION_SPECIFIERS
-94     IDENTIFIER_LIST -> identifier
-95     IDENTIFIER_LIST -> IDENTIFIER_LIST comma identifier
-96     ABSTRACT_DECLARATOR -> DIRECT_ABSTRACT_DECLARATOR
-97     DIRECT_ABSTRACT_DECLARATOR -> rbleft ABSTRACT_DECLARATOR rbright
-98     DIRECT_ABSTRACT_DECLARATOR -> bracketleft bracketright
-99     DIRECT_ABSTRACT_DECLARATOR -> bracketleft CONSTANT_EXPRESSION bracketright
-100    DIRECT_ABSTRACT_DECLARATOR -> DIRECT_ABSTRACT_DECLARATOR bracketleft bracketright
-101    DIRECT_ABSTRACT_DECLARATOR -> DIRECT_ABSTRACT_DECLARATOR bracketleft CONSTANT_EXPRESSION bracketright
-102    DIRECT_ABSTRACT_DECLARATOR -> rbleft rbright
-103    DIRECT_ABSTRACT_DECLARATOR -> rbleft PARAMETER_LIST rbright
-104    DIRECT_ABSTRACT_DECLARATOR -> DIRECT_ABSTRACT_DECLARATOR rbleft rbright
-105    DIRECT_ABSTRACT_DECLARATOR -> DIRECT_ABSTRACT_DECLARATOR rbleft PARAMETER_LIST rbright
-106    INITIALIZER -> ASSIGNMENT_EXPRESSION
-107    INITIALIZER -> braceleft INITIALIZER_LIST braceright
-108    INITIALIZER -> braceleft INITIALIZER_LIST comma braceright
-109    INITIALIZER_LIST -> INITIALIZER
-110    INITIALIZER_LIST -> INITIALIZER_LIST comma INITIALIZER
-111    STATEMENT -> LABELED_STATEMENT
-112    STATEMENT -> COMPOUND_STATEMENT
-113    STATEMENT -> EXPRESSION_STATEMENT
-114    STATEMENT -> SELECTION_STATEMENT
-115    STATEMENT -> ITERATION_STATEMENT
-116    STATEMENT -> JUMP_STATEMENT
-117    LABELED_STATEMENT -> identifier number_sign STATEMENT
-118    COMPOUND_STATEMENT -> braceleft braceright
-119    COMPOUND_STATEMENT -> braceleft STATEMENT_LIST braceright
-120    COMPOUND_STATEMENT -> braceleft DECLARATION_LIST braceright
-121    COMPOUND_STATEMENT -> braceleft DECLARATION_LIST STATEMENT_LIST braceright
-122    DECLARATION_LIST -> DECLARATION
-123    DECLARATION_LIST -> DECLARATION_LIST DECLARATION
-124    STATEMENT_LIST -> STATEMENT
-125    STATEMENT_LIST -> STATEMENT_LIST STATEMENT
-126    EXPRESSION_STATEMENT -> semicolon
-127    EXPRESSION_STATEMENT -> EXPRESSION semicolon
-128    SELECTION_STATEMENT -> if rbleft EXPRESSION rbright STATEMENT else STATEMENT
-129    ITERATION_STATEMENT -> while rbleft EXPRESSION rbright STATEMENT
-130    ITERATION_STATEMENT -> do STATEMENT while rbleft EXPRESSION rbright semicolon
-131    ITERATION_STATEMENT -> for rbleft EXPRESSION_STATEMENT EXPRESSION_STATEMENT EXPRESSION rbright STATEMENT
-132    JUMP_STATEMENT -> goto identifier semicolon
-133    JUMP_STATEMENT -> break semicolon
-134    JUMP_STATEMENT -> return semicolon
-135    JUMP_STATEMENT -> return EXPRESSION semicolon
-136    TRANSLATION_UNIT -> EXTERNAL_DECLARATION
-137    TRANSLATION_UNIT -> TRANSLATION_UNIT EXTERNAL_DECLARATION
-138    EXTERNAL_DECLARATION -> FUNCTION_DEFINITION
-139    EXTERNAL_DECLARATION -> DECLARATION
-140    FUNCTION_DEFINITION -> DECLARATION_SPECIFIERS DIRECT_DECLARATOR COMPOUND_STATEMENT
-Table stack symbols:
-{DECLARATION_SPECIFIERS|x} c ({DECLARATION_SPECIFIERS|65}, {DECLARATION_SPECIFIERS|66}, {DECLARATION_SPECIFIERS|140})
-{TYPE_SPECIFIER|x} c ({TYPE_SPECIFIER|67}, {TYPE_SPECIFIER|68})
-{TRANSLATION_UNIT|x} c ({TRANSLATION_UNIT|0}, {TRANSLATION_UNIT|137})
-{rbleft|x} c ({rbleft|4}, {rbleft|29})
-{sizeof|x} c ({sizeof|18}, {sizeof|19})
-{re|x} c ({re|20}, {re|21})
-{im|x} c ({im|22}, {im|23})
-{mod|x} c ({mod|24}, {mod|25})
-{print|x} c ({print|26}, {print|27})
-{POSTFIX_EXPRESSION|x} c ({POSTFIX_EXPRESSION|6}, {POSTFIX_EXPRESSION|7}, {POSTFIX_EXPRESSION|8}, {POSTFIX_EXPRESSION|9}, {POSTFIX_EXPRESSION|10}, {POSTFIX_EXPRESSION|13}, {POSTFIX_EXPRESSION|61})
-{MULTIPLICATIVE_EXPRESSION|x} c ({MULTIPLICATIVE_EXPRESSION|31}, {MULTIPLICATIVE_EXPRESSION|32}, {MULTIPLICATIVE_EXPRESSION|33}, {MULTIPLICATIVE_EXPRESSION|34})
-{ADDITIVE_EXPRESSION|x} c ({ADDITIVE_EXPRESSION|35}, {ADDITIVE_EXPRESSION|36}, {ADDITIVE_EXPRESSION|37})
-{SHIFT_EXPRESSION|x} c ({SHIFT_EXPRESSION|38}, {SHIFT_EXPRESSION|39}, {SHIFT_EXPRESSION|40})
-{RELATIONAL_EXPRESSION|x} c ({RELATIONAL_EXPRESSION|41}, {RELATIONAL_EXPRESSION|42}, {RELATIONAL_EXPRESSION|43}, {RELATIONAL_EXPRESSION|44}, {RELATIONAL_EXPRESSION|45})
-{EQUALITY_EXPRESSION|x} c ({EQUALITY_EXPRESSION|46}, {EQUALITY_EXPRESSION|47}, {EQUALITY_EXPRESSION|48})
-{AND_EXPRESSION|x} c ({AND_EXPRESSION|49}, {AND_EXPRESSION|50})
-{EXCLUSIVE_OR_EXPRESSION|x} c ({EXCLUSIVE_OR_EXPRESSION|51}, {EXCLUSIVE_OR_EXPRESSION|52})
-{INCLUSIVE_OR_EXPRESSION|x} c ({INCLUSIVE_OR_EXPRESSION|53}, {INCLUSIVE_OR_EXPRESSION|54})
-{LOGICAL_AND_EXPRESSION|x} c ({LOGICAL_AND_EXPRESSION|55}, {LOGICAL_AND_EXPRESSION|56})
-{LOGICAL_OR_EXPRESSION|x} c ({LOGICAL_OR_EXPRESSION|57}, {LOGICAL_OR_EXPRESSION|58}, {LOGICAL_OR_EXPRESSION|59})
-{EXPRESSION|x} c ({EXPRESSION|4}, {EXPRESSION|63})
-{EXPRESSION|y} c ({EXPRESSION|6}, {EXPRESSION|63})
-{ARGUMENT_EXPRESSION_LIST|x} c ({ARGUMENT_EXPRESSION_LIST|8}, {ARGUMENT_EXPRESSION_LIST|12})
-{POSTFIX_EXPRESSION|y} c ({POSTFIX_EXPRESSION|6}, {POSTFIX_EXPRESSION|7}, {POSTFIX_EXPRESSION|8}, {POSTFIX_EXPRESSION|9}, {POSTFIX_EXPRESSION|10}, {POSTFIX_EXPRESSION|13})
-{MULTIPLICATIVE_EXPRESSION|y} c ({MULTIPLICATIVE_EXPRESSION|31}, {MULTIPLICATIVE_EXPRESSION|32}, {MULTIPLICATIVE_EXPRESSION|33}, {MULTIPLICATIVE_EXPRESSION|35})
-{MULTIPLICATIVE_EXPRESSION|z} c ({MULTIPLICATIVE_EXPRESSION|31}, {MULTIPLICATIVE_EXPRESSION|32}, {MULTIPLICATIVE_EXPRESSION|33}, {MULTIPLICATIVE_EXPRESSION|36})
-{ADDITIVE_EXPRESSION|y} c ({ADDITIVE_EXPRESSION|35}, {ADDITIVE_EXPRESSION|36}, {ADDITIVE_EXPRESSION|38})
-{ADDITIVE_EXPRESSION|z} c ({ADDITIVE_EXPRESSION|35}, {ADDITIVE_EXPRESSION|36}, {ADDITIVE_EXPRESSION|39})
-{SHIFT_EXPRESSION|y} c ({SHIFT_EXPRESSION|38}, {SHIFT_EXPRESSION|39}, {SHIFT_EXPRESSION|41})
-{SHIFT_EXPRESSION|z} c ({SHIFT_EXPRESSION|38}, {SHIFT_EXPRESSION|39}, {SHIFT_EXPRESSION|42})
-{SHIFT_EXPRESSION|a} c ({SHIFT_EXPRESSION|38}, {SHIFT_EXPRESSION|39}, {SHIFT_EXPRESSION|43})
-{SHIFT_EXPRESSION|b} c ({SHIFT_EXPRESSION|38}, {SHIFT_EXPRESSION|39}, {SHIFT_EXPRESSION|44})
-{RELATIONAL_EXPRESSION|y} c ({RELATIONAL_EXPRESSION|41}, {RELATIONAL_EXPRESSION|42}, {RELATIONAL_EXPRESSION|43}, {RELATIONAL_EXPRESSION|44}, {RELATIONAL_EXPRESSION|46})
-{RELATIONAL_EXPRESSION|z} c ({RELATIONAL_EXPRESSION|41}, {RELATIONAL_EXPRESSION|42}, {RELATIONAL_EXPRESSION|43}, {RELATIONAL_EXPRESSION|44}, {RELATIONAL_EXPRESSION|47})
-{EQUALITY_EXPRESSION|y} c ({EQUALITY_EXPRESSION|46}, {EQUALITY_EXPRESSION|47}, {EQUALITY_EXPRESSION|49})
-{AND_EXPRESSION|y} c ({AND_EXPRESSION|49}, {AND_EXPRESSION|51})
-{EXCLUSIVE_OR_EXPRESSION|y} c ({EXCLUSIVE_OR_EXPRESSION|51}, {EXCLUSIVE_OR_EXPRESSION|53})
-{INCLUSIVE_OR_EXPRESSION|y} c ({INCLUSIVE_OR_EXPRESSION|53}, {INCLUSIVE_OR_EXPRESSION|55})
-{LOGICAL_AND_EXPRESSION|y} c ({LOGICAL_AND_EXPRESSION|55}, {LOGICAL_AND_EXPRESSION|57})
-{EXPRESSION|z} c ({EXPRESSION|59}, {EXPRESSION|63})
-{INIT_DECLARATOR_LIST|x} c ({INIT_DECLARATOR_LIST|66}, {INIT_DECLARATOR_LIST|70})
-{DIRECT_DECLARATOR|x} c ({DIRECT_DECLARATOR|71}, {DIRECT_DECLARATOR|72}, {DIRECT_DECLARATOR|84}, {DIRECT_DECLARATOR|85}, {DIRECT_DECLARATOR|86}, {DIRECT_DECLARATOR|87}, {DIRECT_DECLARATOR|88})
-{braceleft|x} c ({braceleft|107}, {braceleft|108})
-{DIRECT_DECLARATOR|y} c ({DIRECT_DECLARATOR|83}, {DIRECT_DECLARATOR|84}, {DIRECT_DECLARATOR|85}, {DIRECT_DECLARATOR|86}, {DIRECT_DECLARATOR|87}, {DIRECT_DECLARATOR|88})
-{DECLARATION_SPECIFIERS|y} c ({DECLARATION_SPECIFIERS|91}, {DECLARATION_SPECIFIERS|92}, {DECLARATION_SPECIFIERS|93})
-{PARAMETER_LIST|x} c ({PARAMETER_LIST|86}, {PARAMETER_LIST|90})
-{IDENTIFIER_LIST|x} c ({IDENTIFIER_LIST|87}, {IDENTIFIER_LIST|95})
-{DIRECT_DECLARATOR|z} c ({DIRECT_DECLARATOR|84}, {DIRECT_DECLARATOR|85}, {DIRECT_DECLARATOR|86}, {DIRECT_DECLARATOR|87}, {DIRECT_DECLARATOR|88}, {DIRECT_DECLARATOR|91})
-{rbleft|y} c ({rbleft|97}, {rbleft|102}, {rbleft|103})
-{bracketleft|x} c ({bracketleft|98}, {bracketleft|99})
-{DIRECT_ABSTRACT_DECLARATOR|x} c ({DIRECT_ABSTRACT_DECLARATOR|96}, {DIRECT_ABSTRACT_DECLARATOR|100}, {DIRECT_ABSTRACT_DECLARATOR|101}, {DIRECT_ABSTRACT_DECLARATOR|104}, {DIRECT_ABSTRACT_DECLARATOR|105})
-{PARAMETER_LIST|y} c ({PARAMETER_LIST|90}, {PARAMETER_LIST|103})
-{PARAMETER_LIST|z} c ({PARAMETER_LIST|90}, {PARAMETER_LIST|105})
-{INITIALIZER_LIST|x} c ({INITIALIZER_LIST|107}, {INITIALIZER_LIST|110})
-{INITIALIZER_LIST|y} c ({INITIALIZER_LIST|108}, {INITIALIZER_LIST|110})
-{identifier|x} c ({identifier|1}, {identifier|117})
-{braceleft|y} c ({braceleft|118}, {braceleft|119}, {braceleft|120}, {braceleft|121})
-{return|x} c ({return|134}, {return|135})
-{EXPRESSION|a} c ({EXPRESSION|63}, {EXPRESSION|127})
-{STATEMENT_LIST|x} c ({STATEMENT_LIST|119}, {STATEMENT_LIST|125})
-{DECLARATION_SPECIFIERS|z} c ({DECLARATION_SPECIFIERS|65}, {DECLARATION_SPECIFIERS|66})
-{DECLARATION_LIST|x} c ({DECLARATION_LIST|120}, {DECLARATION_LIST|123})
-{DECLARATION_LIST|y} c ({DECLARATION_LIST|121}, {DECLARATION_LIST|123})
-{STATEMENT_LIST|y} c ({STATEMENT_LIST|121}, {STATEMENT_LIST|125})
-{EXPRESSION|b} c ({EXPRESSION|63}, {EXPRESSION|128})
-{STATEMENT|x} c ({STATEMENT|128}, {STATEMENT|128})
-{EXPRESSION|c} c ({EXPRESSION|63}, {EXPRESSION|129})
-{EXPRESSION|xx} c ({EXPRESSION|63}, {EXPRESSION|130})
-{EXPRESSION_STATEMENT|x} c ({EXPRESSION_STATEMENT|131}, {EXPRESSION_STATEMENT|131})
-{EXPRESSION|yy} c ({EXPRESSION|63}, {EXPRESSION|135})
-{DIRECT_DECLARATOR|a} c ({DIRECT_DECLARATOR|84}, {DIRECT_DECLARATOR|85}, {DIRECT_DECLARATOR|86}, {DIRECT_DECLARATOR|87}, {DIRECT_DECLARATOR|88}, {DIRECT_DECLARATOR|140})
-{__start__|0} c ({__start__|0})
-{constant|2} c ({constant|2})
-{string_literal|3} c ({string_literal|3})
-{rbright|4} c ({rbright|4})
-{PRIMARY_EXPRESSION|5} c ({PRIMARY_EXPRESSION|5})
-{bracketleft|6} c ({bracketleft|6})
-{bracketright|6} c ({bracketright|6})
-{rbleft|7} c ({rbleft|7})
-{rbright|7} c ({rbright|7})
-{rbleft|8} c ({rbleft|8})
-{rbright|8} c ({rbright|8})
-{inc_op|9} c ({inc_op|9})
-{dec_op|10} c ({dec_op|10})
-{ASSIGNMENT_EXPRESSION|11} c ({ASSIGNMENT_EXPRESSION|11})
-{comma|12} c ({comma|12})
-{ASSIGNMENT_EXPRESSION|12} c ({ASSIGNMENT_EXPRESSION|12})
-{inc_op|14} c ({inc_op|14})
-{UNARY_EXPRESSION|14} c ({UNARY_EXPRESSION|14})
-{dec_op|15} c ({dec_op|15})
-{UNARY_EXPRESSION|15} c ({UNARY_EXPRESSION|15})
-{minus|16} c ({minus|16})
-{CAST_EXPRESSION|16} c ({CAST_EXPRESSION|16})
-{excl|17} c ({excl|17})
-{CAST_EXPRESSION|17} c ({CAST_EXPRESSION|17})
-{UNARY_EXPRESSION|18} c ({UNARY_EXPRESSION|18})
-{rbleft|19} c ({rbleft|19})
-{TYPE_SPECIFIER|19} c ({TYPE_SPECIFIER|19})
-{rbright|19} c ({rbright|19})
-{rbleft|20} c ({rbleft|20})
-{constant|20} c ({constant|20})
-{rbright|20} c ({rbright|20})
-{rbleft|21} c ({rbleft|21})
-{identifier|21} c ({identifier|21})
-{rbright|21} c ({rbright|21})
-{rbleft|22} c ({rbleft|22})
-{constant|22} c ({constant|22})
-{rbright|22} c ({rbright|22})
-{rbleft|23} c ({rbleft|23})
-{identifier|23} c ({identifier|23})
-{rbright|23} c ({rbright|23})
-{rbleft|24} c ({rbleft|24})
-{constant|24} c ({constant|24})
-{rbright|24} c ({rbright|24})
-{rbleft|25} c ({rbleft|25})
-{identifier|25} c ({identifier|25})
-{rbright|25} c ({rbright|25})
-{rbleft|26} c ({rbleft|26})
-{string_literal|26} c ({string_literal|26})
-{rbright|26} c ({rbright|26})
-{rbleft|27} c ({rbleft|27})
-{identifier|27} c ({identifier|27})
-{rbright|27} c ({rbright|27})
-{UNARY_EXPRESSION|28} c ({UNARY_EXPRESSION|28})
-{TYPE_SPECIFIER|29} c ({TYPE_SPECIFIER|29})
-{rbright|29} c ({rbright|29})
-{CAST_EXPRESSION|29} c ({CAST_EXPRESSION|29})
-{CAST_EXPRESSION|30} c ({CAST_EXPRESSION|30})
-{star|31} c ({star|31})
-{CAST_EXPRESSION|31} c ({CAST_EXPRESSION|31})
-{slash|32} c ({slash|32})
-{CAST_EXPRESSION|32} c ({CAST_EXPRESSION|32})
-{percent|33} c ({percent|33})
-{CAST_EXPRESSION|33} c ({CAST_EXPRESSION|33})
-{plus|35} c ({plus|35})
-{minus|36} c ({minus|36})
-{left_op|38} c ({left_op|38})
-{right_op|39} c ({right_op|39})
-{less|41} c ({less|41})
-{greater|42} c ({greater|42})
-{le_op|43} c ({le_op|43})
-{ge_op|44} c ({ge_op|44})
-{eq_op|46} c ({eq_op|46})
-{ne_op|47} c ({ne_op|47})
-{amp|49} c ({amp|49})
-{caret|51} c ({caret|51})
-{bar|53} c ({bar|53})
-{and_op|55} c ({and_op|55})
-{or_op|57} c ({or_op|57})
-{question|59} c ({question|59})
-{colon|59} c ({colon|59})
-{CONDITIONAL_EXPRESSION|59} c ({CONDITIONAL_EXPRESSION|59})
-{CONDITIONAL_EXPRESSION|60} c ({CONDITIONAL_EXPRESSION|60})
-{equal|61} c ({equal|61})
-{ASSIGNMENT_EXPRESSION|61} c ({ASSIGNMENT_EXPRESSION|61})
-{ASSIGNMENT_EXPRESSION|62} c ({ASSIGNMENT_EXPRESSION|62})
-{comma|63} c ({comma|63})
-{ASSIGNMENT_EXPRESSION|63} c ({ASSIGNMENT_EXPRESSION|63})
-{CONDITIONAL_EXPRESSION|64} c ({CONDITIONAL_EXPRESSION|64})
-{semicolon|65} c ({semicolon|65})
-{semicolon|66} c ({semicolon|66})
-{DECLARATION_SPECIFIERS|68} c ({DECLARATION_SPECIFIERS|68})
-{INIT_DECLARATOR|69} c ({INIT_DECLARATOR|69})
-{comma|70} c ({comma|70})
-{INIT_DECLARATOR|70} c ({INIT_DECLARATOR|70})
-{equal|72} c ({equal|72})
-{INITIALIZER|72} c ({INITIALIZER|72})
-{void|73} c ({void|73})
-{complex|74} c ({complex|74})
-{char|75} c ({char|75})
-{short|76} c ({short|76})
-{int|77} c ({int|77})
-{long|78} c ({long|78})
-{float|79} c ({float|79})
-{double|80} c ({double|80})
-{bool|81} c ({bool|81})
-{identifier|82} c ({identifier|82})
-{rbleft|83} c ({rbleft|83})
-{rbright|83} c ({rbright|83})
-{bracketleft|84} c ({bracketleft|84})
-{CONSTANT_EXPRESSION|84} c ({CONSTANT_EXPRESSION|84})
-{bracketright|84} c ({bracketright|84})
-{bracketleft|85} c ({bracketleft|85})
-{bracketright|85} c ({bracketright|85})
-{rbleft|86} c ({rbleft|86})
-{rbright|86} c ({rbright|86})
-{rbleft|87} c ({rbleft|87})
-{rbright|87} c ({rbright|87})
-{rbleft|88} c ({rbleft|88})
-{rbright|88} c ({rbright|88})
-{PARAMETER_DECLARATION|89} c ({PARAMETER_DECLARATION|89})
-{comma|90} c ({comma|90})
-{PARAMETER_DECLARATION|90} c ({PARAMETER_DECLARATION|90})
-{ABSTRACT_DECLARATOR|92} c ({ABSTRACT_DECLARATOR|92})
-{identifier|94} c ({identifier|94})
-{comma|95} c ({comma|95})
-{identifier|95} c ({identifier|95})
-{ABSTRACT_DECLARATOR|97} c ({ABSTRACT_DECLARATOR|97})
-{rbright|97} c ({rbright|97})
-{bracketright|98} c ({bracketright|98})
-{CONSTANT_EXPRESSION|99} c ({CONSTANT_EXPRESSION|99})
-{bracketright|99} c ({bracketright|99})
-{bracketleft|100} c ({bracketleft|100})
-{bracketright|100} c ({bracketright|100})
-{bracketleft|101} c ({bracketleft|101})
-{CONSTANT_EXPRESSION|101} c ({CONSTANT_EXPRESSION|101})
-{bracketright|101} c ({bracketright|101})
-{rbright|102} c ({rbright|102})
-{rbright|103} c ({rbright|103})
-{rbleft|104} c ({rbleft|104})
-{rbright|104} c ({rbright|104})
-{rbleft|105} c ({rbleft|105})
-{rbright|105} c ({rbright|105})
-{ASSIGNMENT_EXPRESSION|106} c ({ASSIGNMENT_EXPRESSION|106})
-{braceright|107} c ({braceright|107})
-{comma|108} c ({comma|108})
-{braceright|108} c ({braceright|108})
-{INITIALIZER|109} c ({INITIALIZER|109})
-{comma|110} c ({comma|110})
-{INITIALIZER|110} c ({INITIALIZER|110})
-{LABELED_STATEMENT|111} c ({LABELED_STATEMENT|111})
-{COMPOUND_STATEMENT|112} c ({COMPOUND_STATEMENT|112})
-{EXPRESSION_STATEMENT|113} c ({EXPRESSION_STATEMENT|113})
-{SELECTION_STATEMENT|114} c ({SELECTION_STATEMENT|114})
-{ITERATION_STATEMENT|115} c ({ITERATION_STATEMENT|115})
-{JUMP_STATEMENT|116} c ({JUMP_STATEMENT|116})
-{number_sign|117} c ({number_sign|117})
-{STATEMENT|117} c ({STATEMENT|117})
-{braceright|118} c ({braceright|118})
-{braceright|119} c ({braceright|119})
-{braceright|120} c ({braceright|120})
-{braceright|121} c ({braceright|121})
-{DECLARATION|122} c ({DECLARATION|122})
-{DECLARATION|123} c ({DECLARATION|123})
-{STATEMENT|124} c ({STATEMENT|124})
-{STATEMENT|125} c ({STATEMENT|125})
-{semicolon|126} c ({semicolon|126})
-{semicolon|127} c ({semicolon|127})
-{if|128} c ({if|128})
-{rbleft|128} c ({rbleft|128})
-{rbright|128} c ({rbright|128})
-{else|128} c ({else|128})
-{while|129} c ({while|129})
-{rbleft|129} c ({rbleft|129})
-{rbright|129} c ({rbright|129})
-{STATEMENT|129} c ({STATEMENT|129})
-{do|130} c ({do|130})
-{STATEMENT|130} c ({STATEMENT|130})
-{while|130} c ({while|130})
-{rbleft|130} c ({rbleft|130})
-{rbright|130} c ({rbright|130})
-{semicolon|130} c ({semicolon|130})
-{for|131} c ({for|131})
-{rbleft|131} c ({rbleft|131})
-{EXPRESSION|131} c ({EXPRESSION|131})
-{rbright|131} c ({rbright|131})
-{STATEMENT|131} c ({STATEMENT|131})
-{goto|132} c ({goto|132})
-{identifier|132} c ({identifier|132})
-{semicolon|132} c ({semicolon|132})
-{break|133} c ({break|133})
-{semicolon|133} c ({semicolon|133})
-{semicolon|134} c ({semicolon|134})
-{semicolon|135} c ({semicolon|135})
-{EXTERNAL_DECLARATION|136} c ({EXTERNAL_DECLARATION|136})
-{EXTERNAL_DECLARATION|137} c ({EXTERNAL_DECLARATION|137})
-{FUNCTION_DEFINITION|138} c ({FUNCTION_DEFINITION|138})
-{DECLARATION|139} c ({DECLARATION|139})
-{COMPOUND_STATEMENT|140} c ({COMPOUND_STATEMENT|140})
-exec time = 44.507777
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>SLR(1) Parser</title>
+		<style type="text/css">
+			table { display: inline-table; margin: 10px; }
+		</style>
+	</head>
+	<body>
+		<table border="1">
+			<tbody>
+									<tr><td>0</td><td>E' -> E</td></tr>
+									<tr><td>1</td><td>E -> E + T</td></tr>
+									<tr><td>2</td><td>E -> T</td></tr>
+									<tr><td>3</td><td>T -> T * P</td></tr>
+									<tr><td>4</td><td>T -> P</td></tr>
+									<tr><td>5</td><td>P -> ( E )</td></tr>
+									<tr><td>6</td><td>P -> i</td></tr>
+							</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr><th>V<sub>p</sub></th><th></th></tr>
+			</thead>
+			<tbody>
+									<tr><td>{E|x}</td><td>{E|0}, {E|1}</td></tr>
+									<tr><td>{T|x}</td><td>{T|2}, {T|3}</td></tr>
+									<tr><td>{T|y}</td><td>{T|1}, {T|3}</td></tr>
+									<tr><td>{E|y}</td><td>{E|1}, {E|5}</td></tr>
+									<tr><td>{__start__}</td><td>{__start__}</td></tr>
+									<tr><td>{+|1}</td><td>{+|1}</td></tr>
+									<tr><td>{*|3}</td><td>{*|3}</td></tr>
+									<tr><td>{P|3}</td><td>{P|3}</td></tr>
+									<tr><td>{P|4}</td><td>{P|4}</td></tr>
+									<tr><td>{(|5}</td><td>{(|5}</td></tr>
+									<tr><td>{)|5}</td><td>{)|5}</td></tr>
+									<tr><td>{i|6}</td><td>{i|6}</td></tr>
+							</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>OBLOW</th>
+											<th>{__start__}</th>
+											<th>{E|0}</th>
+											<th>{E|1}</th>
+											<th>{+|1}</th>
+											<th>{T|1}</th>
+											<th>{T|2}</th>
+											<th>{T|3}</th>
+											<th>{*|3}</th>
+											<th>{P|3}</th>
+											<th>{P|4}</th>
+											<th>{(|5}</th>
+											<th>{E|5}</th>
+											<th>{)|5}</th>
+											<th>{i|6}</th>
+									</tr>
+			</thead>
+			<tbody>
+									<tr>
+						<td>{__start__}</td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+											</tr>
+									<tr>
+						<td>{E|0}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{E|1}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{+|1}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+											</tr>
+									<tr>
+						<td>{T|1}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{T|2}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{T|3}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{*|3}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+											</tr>
+									<tr>
+						<td>{P|3}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{P|4}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{(|5}</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td>o</td>
+													<td>o</td>
+													<td></td>
+													<td>o</td>
+											</tr>
+									<tr>
+						<td>{E|5}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td>o</td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{)|5}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+									<tr>
+						<td>{i|6}</td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+													<td></td>
+											</tr>
+							</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>g(X)</th>
+											<th>+</th>
+											<th>*</th>
+											<th>(</th>
+											<th>)</th>
+											<th>i</th>
+											<th>E'</th>
+											<th>E</th>
+											<th>T</th>
+											<th>P</th>
+									</tr>
+			</thead>
+			<tbody>
+									<tr>
+						<td>{E|x}</td>
+						<td>{+|1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{T|x}</td>
+						<td></td><td>{*|3}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{T|y}</td>
+						<td></td><td>{*|3}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{E|y}</td>
+						<td>{+|1}</td><td></td><td></td><td>{)|5}</td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{__start__}</td>
+						<td></td><td></td><td>{(|5}</td><td></td><td>{i|6}</td><td></td><td>{E|x}</td><td>{T|x}</td><td>{P|4}</td>					</tr>
+									<tr>
+						<td>{+|1}</td>
+						<td></td><td></td><td>{(|5}</td><td></td><td>{i|6}</td><td></td><td></td><td>{T|y}</td><td>{P|4}</td>					</tr>
+									<tr>
+						<td>{*|3}</td>
+						<td></td><td></td><td>{(|5}</td><td></td><td>{i|6}</td><td></td><td></td><td></td><td>{P|3}</td>					</tr>
+									<tr>
+						<td>{P|3}</td>
+						<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{P|4}</td>
+						<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{(|5}</td>
+						<td></td><td></td><td>{(|5}</td><td></td><td>{i|6}</td><td></td><td>{E|y}</td><td>{T|x}</td><td>{P|4}</td>					</tr>
+									<tr>
+						<td>{)|5}</td>
+						<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+									<tr>
+						<td>{i|6}</td>
+						<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>					</tr>
+							</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>f(a)</th>
+											<th>+</th>
+											<th>*</th>
+											<th>(</th>
+											<th>)</th>
+											<th>i</th>
+										<th>__end__</th>
+				</tr>
+			</thead>
+			<tbody>
+									<tr>
+						<td>{E|x}</td>
+						<td>П<td></td><td></td><td></td><td></td><td>Д					</tr>
+									<tr>
+						<td>{T|x}</td>
+						<td>С, 2</td><td>П<td></td><td>С, 2</td><td></td><td>С, 2</td>					</tr>
+									<tr>
+						<td>{T|y}</td>
+						<td>С, 1</td><td>П<td></td><td>С, 1</td><td></td><td>С, 1</td>					</tr>
+									<tr>
+						<td>{E|y}</td>
+						<td>П<td></td><td></td><td>П<td></td><td></td>					</tr>
+									<tr>
+						<td>{__start__}</td>
+						<td></td><td></td><td>П<td></td><td>П<td></td>					</tr>
+									<tr>
+						<td>{+|1}</td>
+						<td></td><td></td><td>П<td></td><td>П<td></td>					</tr>
+									<tr>
+						<td>{*|3}</td>
+						<td></td><td></td><td>П<td></td><td>П<td></td>					</tr>
+									<tr>
+						<td>{P|3}</td>
+						<td>С, 3</td><td>С, 3</td><td></td><td>С, 3</td><td></td><td>С, 3</td>					</tr>
+									<tr>
+						<td>{P|4}</td>
+						<td>С, 4</td><td>С, 4</td><td></td><td>С, 4</td><td></td><td>С, 4</td>					</tr>
+									<tr>
+						<td>{(|5}</td>
+						<td></td><td></td><td>П<td></td><td>П<td></td>					</tr>
+									<tr>
+						<td>{)|5}</td>
+						<td>С, 5</td><td>С, 5</td><td></td><td>С, 5</td><td></td><td>С, 5</td>					</tr>
+									<tr>
+						<td>{i|6}</td>
+						<td>С, 6</td><td>С, 6</td><td></td><td>С, 6</td><td></td><td>С, 6</td>					</tr>
+							</tbody>
+		</table>
+	</body>
+</html>

@@ -242,12 +242,39 @@ foreach ($grammar['nonterminals'] as $element) {
 	</head>
 	<body>
 		<table border="1">
+			<tbody>
+				<? foreach ($grammar['rules'] as $ruleNumber => $rule): ?>
+					<tr><td><?=$ruleNumber?></td><td><?=$rule[PARSE_GRAMMAR_RULE]?></td></tr>
+				<? endforeach; ?>
+			</tbody>
+		</table>
+		<table border="1">
 			<thead>
 				<tr><th>V<sub>p</sub></th><th></th></tr>
 			</thead>
 			<tbody>
 				<? foreach ($tableStackSymbols as $marker => $elemSet): ?>
 					<tr><td><?=$marker?></td><td><?=join(', ', $elemSet)?></td></tr>
+				<? endforeach; ?>
+			</tbody>
+		</table>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>OBLOW</th>
+					<? foreach ($allElements as $element): ?>
+						<th><?=$element?></th>
+					<? endforeach; ?>
+				</tr>
+			</thead>
+			<tbody>
+				<? foreach ($allElements as $element): ?>
+					<tr>
+						<td><?=$element?></td>
+						<? foreach ($allElements as $_element): ?>
+							<td><?=(getOblow($element, $_element, $grammar) ? "o" : "")?></td>
+						<? endforeach; ?>
+					</tr>
 				<? endforeach; ?>
 			</tbody>
 		</table>
@@ -266,12 +293,11 @@ foreach ($grammar['nonterminals'] as $element) {
 						<td><?=$marker?></td>
 						<?
 
-
 							foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName) {
 
 								echo '<td>';
 								$oblowElems = array();
-								foreach ($allElements as $element) {
+								foreach ($elements as $element) {
 									foreach ($allElements as $_element) {
 										if ($element->name == $elements[0]->name &&
 											$_element->name == $elementName &&
@@ -328,7 +354,7 @@ foreach ($grammar['nonterminals'] as $element) {
 										continue;
 									}
 								} else {
-									foreach ($allElements as $element) {
+									foreach ($elements as $element) {
 										foreach ($allElements as $_element) {
 											if ($element->name == $elements[0]->name &&
 												$_element->name == $token &&
@@ -343,8 +369,7 @@ foreach ($grammar['nonterminals'] as $element) {
 								foreach ($elements as $element) {
 									if ($element->name == end($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_STATEMENT])) {
 										if (in_array($token, getFollow($grammar['rules'][$element->ruleNumber][PARSE_GRAMMAR_NONTERMINAL], $grammar))) {
-											echo 'С';
-											echo $element->ruleNumber;
+											printf("С, %d", $element->ruleNumber);
 											break;
 										}
 									}

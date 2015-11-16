@@ -1,5 +1,4 @@
 <?php
-
 require_once dirname(__FILE__).'/parseGrammar.php';
 
 define("INPUT_START", "__start__");
@@ -53,10 +52,14 @@ function getOfirst(Element $element, $grammar) {
 function getFollow($elementName, $grammar) {
 	$tokens       = [];
 	$nonterminals = [];
-	$todo         = [$elementName];
 
+	$todo = [$elementName];
+	$done = [];
+	
 	while (sizeof($todo) > 0) {
+
 		$elementName = array_shift($todo);
+		array_push($done, $elementName);
 		// issetFlag will be TRUE if rules which are contained current element exists 
 		$issetFlag = FALSE;
 
@@ -67,10 +70,10 @@ function getFollow($elementName, $grammar) {
 				if (!$issetFlag) {
 					$issetFlag = TRUE;
 				}
-				
+
 				if ($index+1 === sizeof($rule[PARSE_GRAMMAR_STATEMENT])) {
 					// if is last element
-					if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo)) {
+					if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo) && !in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $done)) {
 						array_push($todo, $rule[PARSE_GRAMMAR_NONTERMINAL]);
 					}
 				} else {
@@ -93,6 +96,8 @@ function getFollow($elementName, $grammar) {
 			array_push($tokens, INPUT_END);
 		}
 	}
+
+
 
 	if (sizeof($nonterminals) > 0) {
 		$parsedNonterminals = [];
@@ -171,7 +176,6 @@ $indent = strlen(strval(count($grammar['rules']))) + 4;
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 	fprintf(STDERR, "%-".$indent."d%s\n", $ruleNumber, $ruleArr[PARSE_GRAMMAR_RULE]);
 }
-
 // Getting elements
 $allElements = [new Element(INPUT_START, 0)];
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
@@ -179,6 +183,8 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 		array_push($allElements, new Element($element, $ruleNumber));
 	}
 }
+
+fprintf(STDERR, "all elements: %d\n", count($allElements));
 
 // Getting table stack symbols
 $tableStackSymbols = array();
@@ -387,3 +393,6 @@ foreach ($grammar['nonterminals'] as $element) {
 		</table>
 	</body>
 </html>
+<?php
+
+fprintf(STDERR, "exec time: %f sec\n", microtime(true)-START_TIME);

@@ -197,6 +197,7 @@ class OblowGrammar {
 		return in_array($element2, $ofirstSet);
 	}
 }
+
 $input = $argc > 1 ? $argv[1] : 'php://stdin';
 
 $data = file_get_contents($input);
@@ -244,6 +245,7 @@ foreach ($allElements as $element) {
 			}
 		}
 
+		// Save elements and create marker
 		if (count($elemSet) > 1 && !in_array($elemSet, $tableStackSymbols)) {
 			$i = 0;
 			$j = 1;

@@ -49,6 +49,39 @@ function getOfirst(Element $element, $grammar) {
 	return $ofirst;
 }
 
+class CachedOfirst {
+	const ELEM   = 0;
+	const OFIRST = 1;
+
+	private $cache = [];
+	private $grammar;
+
+	function __construct($grammar) {
+		$this->grammar = $grammar;
+	}
+
+	function getOfirst(Element $element) {
+		if (in_array($element->name, $this->grammar['tokens'])) {
+			return [$element];
+		}
+		
+		foreach ($this->cache as $row) {
+			if ($row[self::ELEM] == $element) {
+				return $row[self::OFIRST];
+			}
+		}
+
+		$ofirst = getOfirst($element, $this->grammar);
+
+		array_push($this->cache, array(
+			self::ELEM   => $element,
+			self::OFIRST => $ofirst
+		));
+
+		return $ofirst;
+	}
+}
+
 function getFollow($elementName, $grammar) {
 	$tokens       = [];
 	$nonterminals = [];
@@ -56,8 +89,8 @@ function getFollow($elementName, $grammar) {
 	$todo = [$elementName];
 	$done = [];
 	
+	// Find all next elements
 	while (sizeof($todo) > 0) {
-
 		$elementName = array_shift($todo);
 		array_push($done, $elementName);
 		// issetFlag will be TRUE if rules which are contained current element exists 
@@ -97,11 +130,10 @@ function getFollow($elementName, $grammar) {
 		}
 	}
 
-
-
 	if (sizeof($nonterminals) > 0) {
 		$parsedNonterminals = [];
 
+		// Find all first tokens
 		while (sizeof($nonterminals) > 0) {
 			$nonterminalName = array_shift($nonterminals);
 			array_push($parsedNonterminals, $nonterminalName);
@@ -128,34 +160,43 @@ function getFollow($elementName, $grammar) {
 	return $tokens;
 }
 
-function getOblow(Element $element1, Element $element2, $grammar) {
-	$nextElement = null;
+class OblowGrammar {
+	private $grammar;
+	private $ofirstCache;
 
-	if ($element1->name == INPUT_START) {
-		if (empty($grammar['rules'])) {
-			return FALSE;
-		}
-		// First element of first grammar rule
-		$nextElement = new Element($grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0);
-	} else {
-		$rule = $grammar['rules'][$element1->ruleNumber];
-		$i = array_search($element1->name, $rule[PARSE_GRAMMAR_STATEMENT]);
-		if ($i === FALSE || $i >= count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
-			return FALSE;
-		}
-		// First element after $element1
-		$nextElement = new Element($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $element1->ruleNumber);
+	function __construct($grammar) {
+		$this->grammar = $grammar;
+		$this->ofirstCache = new CachedOfirst($grammar);
 	}
 
-	$ofirstSet = getOfirst($nextElement, $grammar);
+	function getOblow(Element $element1, Element $element2) {
+		$nextElement = null;
 
-	if (empty($ofirstSet)) {
-		return FALSE;
+		if ($element1->name == INPUT_START) {
+			if (empty($this->grammar['rules'])) {
+				return FALSE;
+			}
+			// First element of first grammar rule
+			$nextElement = new Element($this->grammar['rules'][0][PARSE_GRAMMAR_STATEMENT][0], 0);
+		} else {
+			$rule = $this->grammar['rules'][$element1->ruleNumber];
+			$i = array_search($element1->name, $rule[PARSE_GRAMMAR_STATEMENT]);
+			if ($i === FALSE || $i >= count($rule[PARSE_GRAMMAR_STATEMENT]) - 1) {
+				return FALSE;
+			}
+			// First element after $element1
+			$nextElement = new Element($rule[PARSE_GRAMMAR_STATEMENT][$i+1], $element1->ruleNumber);
+		}
+
+		$ofirstSet = $this->ofirstCache->getOfirst($nextElement);
+
+		if (empty($ofirstSet)) {
+			return FALSE;
+		}
+
+		return in_array($element2, $ofirstSet);
 	}
-
-	return in_array($element2, $ofirstSet);
 }
-
 $input = $argc > 1 ? $argv[1] : 'php://stdin';
 
 $data = file_get_contents($input);
@@ -176,6 +217,7 @@ $indent = strlen(strval(count($grammar['rules']))) + 4;
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 	fprintf(STDERR, "%-".$indent."d%s\n", $ruleNumber, $ruleArr[PARSE_GRAMMAR_RULE]);
 }
+
 // Getting elements
 $allElements = [new Element(INPUT_START, 0)];
 foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
@@ -185,6 +227,9 @@ foreach ($grammar['rules'] as $ruleNumber => $ruleArr) {
 }
 
 fprintf(STDERR, "all elements: %d\n", count($allElements));
+fwrite(STDERR, "caching...\r");
+
+$oblowGrammar = new OblowGrammar($grammar);
 
 // Getting table stack symbols
 $tableStackSymbols = array();
@@ -194,7 +239,7 @@ foreach ($allElements as $element) {
 		$elemSet = array();
 		
 		foreach ($allElements as $_element) {
-			if ($_element->name == $elemName && getOblow($element, $_element, $grammar)) {
+			if ($_element->name == $elemName && $oblowGrammar->getOblow($element, $_element)) {
 				array_push($elemSet, new Element($_element->name, $_element->ruleNumber));
 			}
 		}
@@ -237,6 +282,8 @@ fwrite(STDERR, "FOLLOW(x) table:\n");
 foreach ($grammar['nonterminals'] as $element) {
 	fprintf(STDERR, "FOLLOW(%s) = %s\n", $element, json_encode(getFollow($element, $grammar)));
 }
+
+fwrite(STDERR, "writing HTML...\r");
 
 ?><!DOCTYPE html>
 <html>
@@ -281,7 +328,7 @@ foreach ($grammar['nonterminals'] as $element) {
 					<tr>
 						<td><?=$element?></td>
 						<? foreach ($allElements as $_element): ?>
-							<td><?=(getOblow($element, $_element, $grammar) ? "o" : "")?></td>
+							<td><?=($oblowGrammar->getOblow($element, $_element) ? "o" : "")?></td>
 						<? endforeach; ?>
 					</tr>
 				<? endforeach; ?>
@@ -310,7 +357,7 @@ foreach ($grammar['nonterminals'] as $element) {
 									foreach ($allElements as $_element) {
 										if ($element->name == $elements[0]->name &&
 											$_element->name == $elementName &&
-											getOblow($element, $_element, $grammar)) {
+											$oblowGrammar->getOblow($element, $_element)) {
 
 											array_push($oblowElems, $_element);
 										}
@@ -367,7 +414,7 @@ foreach ($grammar['nonterminals'] as $element) {
 										foreach ($allElements as $_element) {
 											if ($element->name == $elements[0]->name &&
 												$_element->name == $token &&
-												getOblow($element, $_element, $grammar)) {
+												$oblowGrammar->getOblow($element, $_element)) {
 												echo 'П';
 												continue 3;
 											}

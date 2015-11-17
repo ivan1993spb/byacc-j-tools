@@ -349,11 +349,9 @@ fwrite(STDERR, "writing HTML...\r");
 				<? foreach ($tableStackSymbols as $marker => $elements):?>
 					<tr>
 						<td><?=$marker?></td>
-						<?
-
-							foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName) {
-
-								echo '<td>';
+						<? foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName): ?>
+							<td><?php
+								echo '';
 								$oblowElems = array();
 								foreach ($elements as $element) {
 									foreach ($allElements as $_element) {
@@ -370,11 +368,8 @@ fwrite(STDERR, "writing HTML...\r");
 								if ($index !== FALSE) {
 									echo $index;
 								}
-								echo '</td>';
-							}
-
-
-						?>
+							?></td>
+						<? endforeach; ?>
 					</tr>
 				<? endforeach; ?>
 			</tbody>
@@ -393,12 +388,8 @@ fwrite(STDERR, "writing HTML...\r");
 				<? foreach ($tableStackSymbols as $marker => $elements):?>
 					<tr>
 						<td><?=$marker?></td>
-						<?
-
-
-							foreach (array_merge($grammar['tokens'], [INPUT_END]) as $token) {
-								echo '<td>';
-								
+						<? foreach (array_merge($grammar['tokens'], [INPUT_END]) as $token): ?>
+							<td><?php
 								if ($token === INPUT_END) {
 									$isset_0 = FALSE;
 									foreach ($elements as $element) {
@@ -409,7 +400,7 @@ fwrite(STDERR, "writing HTML...\r");
 									}
 									if ($isset_0) {
 										echo 'Д';
-										continue;
+										goto closeField;
 									}
 								} else {
 									foreach ($elements as $element) {
@@ -418,7 +409,7 @@ fwrite(STDERR, "writing HTML...\r");
 												$_element->name == $token &&
 												$oblowGrammar->getOblow($element, $_element)) {
 												echo 'П';
-												continue 3;
+												goto closeField;
 											}
 										}
 									}
@@ -432,11 +423,9 @@ fwrite(STDERR, "writing HTML...\r");
 										}
 									}
 								}
-
-								echo '</td>';
-							}
-
-						?>
+								closeField:
+							?></td>
+						<? endforeach; ?>
 					</tr>
 				<? endforeach; ?>
 			</tbody>

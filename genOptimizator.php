@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 require_once dirname(__FILE__).'/parseArgs.php';
@@ -85,6 +86,7 @@ foreach ($grammar['nonterminals'] as $nonterminal => $statements) {
 				echo "                        if (".join(" && ", $conditions).") {\n";
 
 				for ($i = 0; $i < sizeof($statement); $i++) {
+					echo "                            element$i.setParent(ptnode);\n";
 					echo "                            ptnode.insertElementBefore(child, element$i);\n";
 				}
 				echo "                            System.out.println(\"(recursive) removed \" + ptnodeChild.getNonterminal());\n";

@@ -1,4 +1,6 @@
+#!/usr/bin/env php
 <?php
+
 require_once dirname(__FILE__).'/parseGrammar.php';
 
 define("INPUT_START", "__start__");
@@ -106,7 +108,8 @@ function getFollow($elementName, $grammar) {
 
 				if ($index+1 === sizeof($rule[PARSE_GRAMMAR_STATEMENT])) {
 					// if is last element
-					if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo) && !in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $done)) {
+					if (!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $todo) &&
+						!in_array($rule[PARSE_GRAMMAR_NONTERMINAL], $done)) {
 						array_push($todo, $rule[PARSE_GRAMMAR_NONTERMINAL]);
 					}
 				} else {
@@ -232,34 +235,116 @@ fwrite(STDERR, "caching...\r");
 
 $oblowGrammar = new OblowGrammar($grammar);
 
+function getMarker($i) {
+	$symbols = ['x', 'y', 'z', 'a', 'b', 'c'];
+	$conv = base_convert($i, 10, count($symbols));
+	$marker = '';
+
+	for ($j = 0; $j < strlen($conv); $j++) {
+		$marker .= $symbols[(int)$conv[$j]];
+	}
+
+	return $marker;
+}
+
 // Getting table stack symbols
 $tableStackSymbols = array();
-$markers = array('x', 'y', 'z', 'a', 'b', 'c');
+
 foreach ($allElements as $element) {
-	foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elemName) {
-		$elemSet = array();
-		
-		foreach ($allElements as $_element) {
-			if ($_element->name == $elemName && $oblowGrammar->getOblow($element, $_element)) {
-				array_push($elemSet, new Element($_element->name, $_element->ruleNumber));
+	$oblowRow = [];
+	$names    = [];
+	
+	foreach ($allElements as $_element) {
+		if ($oblowGrammar->getOblow($element, $_element)) {
+			array_push($oblowRow, $_element);
+
+			if (!in_array($_element->name, $names)) {
+				array_push($names, $_element->name);
+			}
+		}
+	}
+
+	foreach ($names as $elementName) {
+		$elements = [];
+
+		foreach ($oblowRow as $_element) {
+			if ($_element->name == $elementName) {
+				array_push($elements, $_element);
 			}
 		}
 
-		// Save elements and create marker
-		if (count($elemSet) > 1 && !in_array($elemSet, $tableStackSymbols)) {
+		if (in_array($elements, $tableStackSymbols)) {
+			continue;
+		}
+
+		if (count($elements) > 1) {
 			$i = 0;
-			$j = 1;
+
 			while (TRUE) {
-				if ($i < count($markers)) {
-					$marker = sprintf("{%s|%s}", $elemName, str_repeat($markers[$i], $j));
-					if (!array_key_exists($marker, $tableStackSymbols)) {
-						$tableStackSymbols[$marker] = $elemSet;
+				$marker = sprintf("{%s|%s}", $elementName, getMarker($i));
+
+				if (!array_key_exists($marker, $tableStackSymbols)) {
+					$tableStackSymbols[$marker] = $elements;
+					break;
+				}
+
+				$i++;
+			}
+		} elseif (count($elements) == 1) {
+			$marker = $elements[0]->__toString();
+
+			if (!array_key_exists($marker, $tableStackSymbols)) {
+				$tableStackSymbols[$marker] = $elements;
+			}
+		}
+	}
+}
+
+$_tableStackSymbols = [];
+
+foreach ($tableStackSymbols as $elements) {
+	if (count($elements) > 1) {
+		$oblowRow = [];
+		$names    = [];
+
+		foreach ($elements as $element) {
+			foreach ($allElements as $_element) {
+				if ($oblowGrammar->getOblow($element, $_element)) {
+					array_push($oblowRow, $_element);
+
+					if (!in_array($_element->name, $names)) {
+						array_push($names, $_element->name);
+					}
+				}
+			}
+		}
+
+		foreach ($names as $elementName) {
+			$elements = [];
+
+			foreach ($oblowRow as $_element) {
+				if ($_element->name == $elementName) {
+					array_push($elements, $_element);
+				}
+			}
+
+			if (in_array($elements, $tableStackSymbols)) {
+				continue;
+			}
+
+			if (count($elements) > 1) {
+				$i = 0;
+
+				while (TRUE) {
+					$marker = sprintf("{%s|%s}", $elementName, getMarker($i));
+
+					if (!array_key_exists($marker, $tableStackSymbols) &&
+						!array_key_exists($marker, $_tableStackSymbols)) {
+						$_tableStackSymbols[$marker] = $elements;
 						break;
 					}
+
 					$i++;
-				} else {
-					$i = 0;
-					$j++;
 				}
 			}
 		}
@@ -275,10 +360,14 @@ foreach ($allElements as $element) {
 	$tableStackSymbols["$element"] = [$element];
 }
 
+$tableStackSymbols = array_merge($tableStackSymbols, $_tableStackSymbols);
+
 fwrite(STDERR, "Table stack symbols:\n");
 foreach ($tableStackSymbols as $marker => $elemSet) {
 	fprintf(STDERR, "%s c (%s)\n", $marker, join(', ', $elemSet));
 }
+
+//die();
 
 fwrite(STDERR, "FOLLOW(x) table:\n");
 foreach ($grammar['nonterminals'] as $element) {
@@ -296,7 +385,28 @@ fwrite(STDERR, "writing HTML...\r");
 			table { display: inline-table; margin: 10px; }
 			td, th { text-align: center; padding: 5px; }
 			tbody tr td:first-child { font-weight: bold; }
+			.sel { background: #ddd; }
 		</style>
+
+		<? if (is_file("jquery-2.1.4.min.js")): ?>
+			<script type="text/javascript">
+				<?=file_get_contents("jquery-2.1.4.min.js")?>
+			</script>
+		<? else: ?>
+			<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<? endif; ?>
+		
+		<script type="text/javascript">
+		$(function(){
+			$('table tbody td, table thead th').click(function () {
+				$(this).parent().parent().parent().find("th, td, tr").removeClass('sel');
+				$(this).parent().addClass('sel');
+				$(this).parent().parent().parent()
+					.find('th:nth-child(' + ($(this).index() + 1) + '),'+
+						' td:nth-child(' + ($(this).index() + 1) + ')').addClass('sel');
+			});
+		});
+		</script>
 	</head>
 	<body>
 		<table border="1">
@@ -306,6 +416,7 @@ fwrite(STDERR, "writing HTML...\r");
 				<? endforeach; ?>
 			</tbody>
 		</table>
+
 		<table border="1">
 			<thead>
 				<tr><th>V<sub>p</sub></th><th></th></tr>
@@ -316,6 +427,7 @@ fwrite(STDERR, "writing HTML...\r");
 				<? endforeach; ?>
 			</tbody>
 		</table>
+
 		<table border="1">
 			<thead>
 				<tr>
@@ -336,44 +448,73 @@ fwrite(STDERR, "writing HTML...\r");
 				<? endforeach; ?>
 			</tbody>
 		</table>
+
 		<table border="1">
 			<thead>
 				<tr>
 					<th>g(X)</th>
-					<? foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $field): ?>
-						<th><?=$field?></th>
+					<? foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $fieldName): ?>
+						<th><?=$fieldName?></th>
 					<? endforeach; ?>
 				</tr>
 			</thead>
 			<tbody>
-				<? foreach ($tableStackSymbols as $marker => $elements):?>
+				<? foreach ($tableStackSymbols as $marker => $elements): ?>
 					<tr>
 						<td><?=$marker?></td>
 						<? foreach (array_merge($grammar['tokens'], $grammar['nonterminals']) as $elementName): ?>
 							<td><?php
-								echo '';
+
 								$oblowElems = array();
+
 								foreach ($elements as $element) {
 									foreach ($allElements as $_element) {
-										if ($element->name == $elements[0]->name &&
+										if (
 											$_element->name == $elementName &&
 											$oblowGrammar->getOblow($element, $_element)) {
-
-											array_push($oblowElems, $_element);
+											if (!in_array($_element, $oblowElems)) {
+												array_push($oblowElems, $_element);
+											}
 										}
 									}
 								}
 
-								$index = array_search($oblowElems, $tableStackSymbols);
-								if ($index !== FALSE) {
+								foreach ($tableStackSymbols as $index => $_elements) {
+									if (count($_elements) != count($oblowElems)) {
+										continue;
+									}
+
+									foreach ($oblowElems as $_element) {
+										if (!in_array($_element, $_elements)) {
+											continue 2;
+										}
+									}
+
 									echo $index;
+									break;
 								}
+
+								// $index = array_search($oblowElems, $tableStackSymbols);
+
+								// if ($index !== FALSE) {
+								// 	echo $index;
+								// } else
+								// if ($marker == '{DECLARATION_SPECIFIERS|x}') {
+
+									// if (!empty($oblowElems)) {
+										// echo json_encode($oblowElems);
+										// echo "<br/>";
+										// echo json_encode($tableStackSymbols);
+
+									// }
+								// }
 							?></td>
 						<? endforeach; ?>
 					</tr>
 				<? endforeach; ?>
 			</tbody>
 		</table>
+
 		<table border="1">
 			<thead>
 				<tr>
@@ -405,7 +546,7 @@ fwrite(STDERR, "writing HTML...\r");
 								} else {
 									foreach ($elements as $element) {
 										foreach ($allElements as $_element) {
-											if ($element->name == $elements[0]->name &&
+											if (
 												$_element->name == $token &&
 												$oblowGrammar->getOblow($element, $_element)) {
 												echo 'П';

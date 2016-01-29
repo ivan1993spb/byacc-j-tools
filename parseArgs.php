@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php
 
 function parseArgs($settings, &$argc, &$argv) {

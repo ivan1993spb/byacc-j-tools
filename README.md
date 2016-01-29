@@ -1,23 +1,51 @@
 byacc-j-tools
 =============
 
-generation slr table from yacc
+generate yacc map
+-----------------
+
+```bash
+$ ./genHtml grammar.y > map.html
+```
+
+generate java classes from yacc
+-------------------------------
+
+```bash
+$ ./genJavaClasses --package=org.some.pack.age --parent=org.some.pack.age.ParentClass --directory=test --tokens=IDENTIFIER,CONSTANT,STRING_LITERAL grammar.y
+```
+
+generate grammar tables
+-----------------------
+
+```bash
+$ ./genLrTable grammar.txt > tables.html
+```
+
+generate nonterminal java enum
 ------------------------------
 
 ```bash
-$ ./yaccToSlr.php grammar.y
+$ ./genNonterminalEnum --package=any.package grammar.y
 ```
 
-generation java classes from yacc
----------------------------------
+generate tree recursion optimizator
+-----------------------------------
 
 ```bash
-$ ./genJavaClasses.php --package=com.test.pack.age --directory=test --parent=edu.eltech.moevm.ParserVar --tokens=IDENTIFIER,CONSTANT,STRING_LITERAL grammar.y
+$ ./genOptimizator --package=any.package grammar.y
 ```
 
-generation java code for yacc 
------------------------------
+generate java code for yacc file 
+--------------------------------
 
 ```bash
-$ ./genYaccJava.php grammar.y --save_token_value=IDENTIFIER,STRING_LITERAL,CONSTANT > /tmp/grammar.y && mv /tmp/grammar.y ./
+$ ./genYaccJava --save_token_value=IDENTIFIER,STRING_LITERAL,CONSTANT grammar.y > example.y
+```
+
+convert yacc grammar into normal form
+-------------------------------------
+
+```bash
+$ ./yaccToSlr grammar.y
 ```

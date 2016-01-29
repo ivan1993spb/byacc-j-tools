@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php
 
 define("PARSE_GRAMMAR_RULE", 0);
